@@ -10,22 +10,8 @@ def processar_dados(df):
         df["Auto de Infração"] = df.iloc[:, 5].astype(str).str.strip()  # Coluna F
         df["Data da Infração"] = pd.to_datetime(df.iloc[:, 9], dayfirst=True, errors="coerce")  # Coluna J
 
-        # Substituir valores inválidos em 'Valor Calculado' (Coluna O - índice 14)
-        df["Valor Calculado"] = (
-            df.iloc[:, 14]
-            .astype(str)
-            .str.replace(r"[^0-9,.-]", "", regex=True)  # Remove caracteres inválidos
-            .str.replace(",", ".")  # Substitui vírgula por ponto para valores decimais
-            .replace("", "0")  # Substituir strings vazias por "0"
-        )
-
-        # Logar valores inválidos para depuração
-        invalid_values = df[~df["Valor Calculado"].str.match(r"^-?\d+(\.\d+)?$", na=False)]
-        if not invalid_values.empty:
-            print(f"Valores inválidos encontrados: {invalid_values['Valor Calculado'].tolist()}")
-
-        # Converter para numérico
-        df["Valor Calculado"] = pd.to_numeric(df["Valor Calculado"], errors="coerce").fillna(0)
+        # Limpar e converter a coluna monetária (Coluna O - índice 14)
+        clean_monetary_column(df, 14)
 
         # Verificar se 'ultimo_dia' é válido
         ultimo_dia = df["Dia da Consulta"].max()
@@ -33,7 +19,10 @@ def processar_dados(df):
             raise ValueError("Não há datas válidas na coluna 'Dia da Consulta'.")
 
         # Filtrar pelo último dia da consulta
-        df_ultimo_dia = df[df["Dia da Consulta"] == ultimo_dia].drop_duplicates(
+        df_ultimo_dia = df[df["Dia da Consulta"] == ultimo_dia]
+
+        # Remover duplicatas com base em colunas-chave
+        df_ultimo_dia = df_ultimo_dia.drop_duplicates(
             subset=["Auto de Infração", "Data da Infração", "Valor Calculado"]
         )
 
@@ -53,3 +42,20 @@ def processar_dados(df):
         raise ValueError(f"Erro nos valores do DataFrame: {ve}")
     except Exception as e:
         raise Exception(f"Erro ao processar os dados: {e}")
+
+def clean_monetary_column(df, column_index):
+    """
+    Limpa e converte uma coluna monetária para formato numérico baseado no índice da coluna.
+    """
+    try:
+        df.iloc[:, column_index] = (
+            df.iloc[:, column_index]
+            .astype(str)
+            .str.replace(r"[^0-9,.-]", "", regex=True)  # Remove caracteres inválidos
+            .str.replace(",", ".")  # Substitui vírgula por ponto para valores decimais
+            .replace("", "0")  # Substituir strings vazias por "0"
+            .astype(float)
+        )
+        return df
+    except Exception as e:
+        raise ValueError(f"Erro ao limpar coluna monetária no índice {column_index}: {e}")
