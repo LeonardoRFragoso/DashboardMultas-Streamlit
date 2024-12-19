@@ -1,41 +1,72 @@
 import pandas as pd
 
-def clean_data(df):
+def processar_dados(df):
     """
-    Limpa e padroniza os dados de um DataFrame, ajustando colunas específicas
-    e garantindo que estejam no formato correto.
-
-    Args:
-        df (pd.DataFrame): DataFrame contendo os dados originais.
-
-    Returns:
-        pd.DataFrame: DataFrame limpo e padronizado.
+    Processa os dados carregados, aplicando filtros e cálculos necessários para o dashboard.
     """
-    # Ajustar nomes de colunas
-    df.columns = df.columns.str.strip()
+    try:
+        # Conversões de colunas por índice
+        df["Dia da Consulta"] = pd.to_datetime(df.iloc[:, 0], dayfirst=True, errors="coerce")  # Coluna A
+        df["Auto de Infração"] = df.iloc[:, 5].astype(str).str.strip()  # Coluna F
+        df["Data da Infração"] = pd.to_datetime(df.iloc[:, 9], dayfirst=True, errors="coerce")  # Coluna J
 
-    # Verificar se as colunas necessárias estão presentes
-    required_columns = ["Valor a ser pago R$", "Dia da Consulta", "Auto de Infração"]
-    for col in required_columns:
-        if col not in df.columns:
-            raise ValueError(f"A coluna '{col}' não foi encontrada nos dados.")
+        # Substituir valores inválidos em 'Valor Calculado' (Coluna O - índice 14)
+        df["Valor Calculado"] = (
+            df.iloc[:, 14]
+            .astype(str)
+            .str.replace(r"[^0-9,.-]", "", regex=True)  # Remove caracteres inválidos
+            .str.replace(",", ".")  # Substitui vírgula por ponto para valores decimais
+            .replace("", "0")  # Substituir strings vazias por "0"
+        )
 
-    # Limpar e converter a coluna 'Valor a ser pago R$' para numérico
-    df["Valor a ser pago R$"] = pd.to_numeric(
-        df["Valor a ser pago R$"].replace({r"[^0-9,\.]": "", ",": "."}, regex=True),
-        errors="coerce"
-    ).fillna(0)
+        # Logar valores inválidos para depuração
+        invalid_values = df[~df["Valor Calculado"].str.match(r"^-?\d+(\.\d+)?$", na=False)]
+        if not invalid_values.empty:
+            print(f"Valores inválidos encontrados: {invalid_values['Valor Calculado'].tolist()}")
 
-    # Converter a coluna 'Dia da Consulta' para formato datetime
-    df["Dia da Consulta"] = pd.to_datetime(df["Dia da Consulta"], dayfirst=True, errors="coerce")
+        # Converter para numérico
+        df["Valor Calculado"] = pd.to_numeric(df["Valor Calculado"], errors="coerce").fillna(0)
 
-    # Adicionar validação e conversão para colunas adicionais, se aplicável
-    if "Data da Infração" in df.columns:
-        df["Data da Infração"] = pd.to_datetime(df["Data da Infração"], dayfirst=True, errors="coerce")
+        # Verificar se 'ultimo_dia' é válido
+        ultimo_dia = df["Dia da Consulta"].max()
+        if pd.isna(ultimo_dia):
+            raise ValueError("Não há datas válidas na coluna 'Dia da Consulta'.")
 
-    # Validar o padrão da coluna 'Auto de Infração'
-    padrao_auto_infracao = r"^[A-Z]{1}\d{8}$"
-    df["Auto de Infração"] = df["Auto de Infração"].astype(str).str.strip()
-    df = df[df["Auto de Infração"].str.match(padrao_auto_infracao, na=False)]
+        # Filtrar pelo último dia da consulta
+        df_ultimo_dia = df[df["Dia da Consulta"] == ultimo_dia].drop_duplicates(
+            subset=["Auto de Infração", "Data da Infração", "Valor Calculado"]
+        )
 
-    return df
+        # Validar padrão "Auto de Infração"
+        padrao_auto_infracao = r"^[A-Z]{1}\d{8}$"
+        registros_invalidos = df_ultimo_dia[~df_ultimo_dia["Auto de Infração"].str.match(padrao_auto_infracao, na=False)]
+        if not registros_invalidos.empty:
+            print(f"Registros inválidos em 'Auto de Infração': {registros_invalidos['Auto de Infração'].tolist()}")
+
+        df_ultimo_dia = df_ultimo_dia[df_ultimo_dia["Auto de Infração"].str.match(padrao_auto_infracao, na=False)]
+
+        return df_ultimo_dia, ultimo_dia
+
+    except KeyError as ke:
+        raise KeyError(f"Erro nas colunas do DataFrame: {ke}")
+    except ValueError as ve:
+        raise ValueError(f"Erro nos valores do DataFrame: {ve}")
+    except Exception as e:
+        raise Exception(f"Erro ao processar os dados: {e}")
+
+def clean_monetary_column(df, column_index):
+    """
+    Limpa e converte uma coluna monetária para formato numérico baseado no índice da coluna.
+    """
+    try:
+        df.iloc[:, column_index] = (
+            df.iloc[:, column_index]
+            .astype(str)
+            .str.replace(r"[^0-9,.-]", "", regex=True)  # Remove caracteres inválidos
+            .str.replace(",", ".")  # Substitui vírgula por ponto para valores decimais
+            .replace("", "0")  # Substituir strings vazias por "0"
+            .astype(float)
+        )
+        return df
+    except Exception as e:
+        raise ValueError(f"Erro ao limpar coluna monetária no índice {column_index}: {e}")
