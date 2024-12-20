@@ -585,19 +585,29 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
             .reset_index()
         )
 
+        # Adicionar todos os meses ao índice
+        all_months = pd.period_range(
+            start=f"{datetime.now().year}-01", 
+            end=f"{datetime.now().year}-12", 
+            freq="M"
+        )
+        accumulated_summary.set_index(9, inplace=True)
+        accumulated_summary = accumulated_summary.reindex(all_months, fill_value=0).reset_index()
+        accumulated_summary.rename(columns={9: "Período"}, inplace=True)
+
         # Converter o período para formato de data para o gráfico
-        accumulated_summary[9] = accumulated_summary[9].dt.to_timestamp()
+        accumulated_summary["Período"] = accumulated_summary["Período"].dt.to_timestamp()
 
         # Criar o gráfico de linha
         accumulated_chart = px.line(
             accumulated_summary,
-            x=9,
+            x="Período",
             y=['Quantidade_de_Multas', 'Valor_Total'],
             title="",
             labels={
                 "value": "Valores",
                 "variable": "Métricas",
-                "9": "Período"
+                "Período": "Período"
             },
             markers=True,
         )
