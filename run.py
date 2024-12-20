@@ -448,7 +448,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 
 # Infrações Mais Comuns
-required_columns = [8, 11, 5]
+required_columns = [8, 11, 5]  # Código da infração, Descrição, Auto de Infração
 missing_columns = [col for col in required_columns if col not in filtered_data.columns]
 if not missing_columns:
     st.markdown(
@@ -468,7 +468,13 @@ if not missing_columns:
         unsafe_allow_html=True
     )
 
-    filtered_infractions_data = filtered_data[required_columns]
+    # Filtrar registros únicos com base no índice Auto de Infração (5)
+    unique_infractions = filtered_data.drop_duplicates(subset=[5])
+
+    # Selecionar apenas as colunas necessárias
+    filtered_infractions_data = unique_infractions[required_columns]
+
+    # Criar o gráfico de infrações mais comuns
     common_infractions_chart = create_common_infractions_chart(filtered_infractions_data)
     st.plotly_chart(common_infractions_chart, use_container_width=True)
 else:
