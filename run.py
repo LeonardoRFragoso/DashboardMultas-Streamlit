@@ -12,6 +12,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2.service_account import Credentials
 import io
+import plotly.express as px
 from folium import Map, Marker, Popup
 from folium.features import CustomIcon
 from streamlit_folium import st_folium
