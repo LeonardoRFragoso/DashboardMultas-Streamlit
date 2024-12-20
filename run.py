@@ -501,6 +501,7 @@ else:
     missing_columns = [col for col in [8, 11, 5] if col not in filtered_data.columns]
     st.error(f"As colunas necessárias para o gráfico de infrações mais comuns estão ausentes: {missing_columns}")
 
+
 # Distribuição por Dias da Semana
 if 9 in filtered_data.columns:
     st.markdown(
