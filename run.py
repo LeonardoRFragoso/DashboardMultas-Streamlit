@@ -446,32 +446,39 @@ fig.update_layout(
 # Mostrar o gráfico no Streamlit
 st.plotly_chart(fig, use_container_width=True)
 
-# Código para Infrações Mais Comuns
-required_columns = [8, 11, 5]  # Substitua pelos índices ou nomes reais após a verificação
-if all(col in filtered_data.columns for col in required_columns):  # Verifica se as colunas existem
-    unique_infractions = filtered_data.drop_duplicates(subset=[5])  # Use o índice/nome correto
+# Índices necessários para Infrações Mais Comuns
+required_columns = [8, 11, 5]  # Código da infração, Descrição da infração, Auto de Infração
 
-    # Ajuste de agrupamento
+if all(col in filtered_data.columns for col in required_columns):  # Verificar se as colunas existem
+    # Filtrar registros únicos com base no Auto de Infração
+    unique_infractions = filtered_data.drop_duplicates(subset=[5])
+
+    # Agrupar por Código de Infração e Descrição
     infraction_summary = (
-        unique_infractions.groupby(8)  # Substitua pelo índice/nome real da coluna de código de infração
+        unique_infractions.groupby(8)  # Índice do Código de Infração
         .agg(
-            Quantidade=('5', 'count'),  # Substitua pelos índices/nomes reais
-            Descrição=('11', 'first')   # Substitua pelos índices/nomes reais
+            Quantidade=('Auto de Infração', 'count'),  # Contar ocorrências únicas pelo Auto de Infração
+            Descrição=(11, 'first')   # Pegar a descrição correspondente
         )
         .reset_index()
         .sort_values(by='Quantidade', ascending=False)
     )
 
-    # Gráfico atualizado
+    # Criar o gráfico atualizado
     fig = px.bar(
         infraction_summary,
-        x='Descrição',  # Ajuste se necessário
+        x='Descrição',
         y='Quantidade',
         text='Quantidade',
         labels={'Descrição': 'Descrição da Infração', 'Quantidade': 'Ocorrências'}
     )
     fig.update_traces(textposition='outside')
-    fig.update_layout(template="plotly_white")
+    fig.update_layout(
+        xaxis_title="Descrição da Infração",
+        yaxis_title="Quantidade de Ocorrências",
+        template="plotly_white",
+        title="Infrações Mais Comuns"
+    )
     st.plotly_chart(fig, use_container_width=True)
 else:
     missing_columns = [col for col in required_columns if col not in filtered_data.columns]
