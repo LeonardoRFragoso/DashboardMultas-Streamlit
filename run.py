@@ -218,7 +218,20 @@ cache = load_cache()  # Carregar coordenadas do cache
 filtered_data = ensure_coordinates(filtered_data, cache, api_key)
 
 # Indicadores Principais - Atualizado
-st.markdown('<h2 style="text-align: center; color: #0066B4;">Indicadores Principais</h2>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <h2 style="
+        text-align: center; 
+        color: #0066B4; 
+        border-bottom: 2px solid #0066B4; 
+        padding-bottom: 5px; 
+        display: inline-block;
+    ">
+        Indicadores Principais
+    </h2>
+    """, 
+    unsafe_allow_html=True
+)
 
 # Indicador 1: Total de Multas (Auto de Infração únicos)
 total_multas = data[5].nunique()  # Contar registros únicos no índice 5
@@ -278,7 +291,20 @@ st.markdown(indicadores_html, unsafe_allow_html=True)
 
 
 # Map Section
-st.markdown('<h2 style="text-align: center; color: #0066B4;">Distribuição Geográfica</h2>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <h2 style="
+        text-align: center; 
+        color: #0066B4; 
+        border-bottom: 2px solid #0066B4; 
+        padding-bottom: 5px; 
+        display: inline-block;
+    ">
+        Distribuição Geográfica
+    </h2>
+    """, 
+    unsafe_allow_html=True
+)
 
 # Configurar local inicial do mapa com base nas coordenadas médias das multas
 if not filtered_data.empty and 'Latitude' in filtered_data.columns and 'Longitude' in filtered_data.columns:
@@ -323,9 +349,20 @@ if map_click_data and map_click_data.get("last_object_clicked"):
 
     if not selected_fines.empty:
         st.markdown(
-            "<h2 style='text-align: center; color: #0066B4;'>Detalhes das Multas para a Localização Selecionada</h2>",
+            """
+            <h2 style="
+                text-align: center; 
+                color: #0066B4; 
+                border-bottom: 2px solid #0066B4; 
+                padding-bottom: 5px; 
+                display: inline-block;
+            ">
+                Detalhes das Multas para a Localização Selecionada
+            </h2>
+            """, 
             unsafe_allow_html=True
         )
+
         # Exibir detalhes das multas no DataFrame
         st.dataframe(
             selected_fines[[1, 12, 14, 9, 11]].rename(
@@ -345,7 +382,20 @@ if map_click_data and map_click_data.get("last_object_clicked"):
 
 # Graphs Section
 # Gráfico de Veículos com Mais Multas - Ajustado para Multas Únicas
-st.markdown("<h2 style='text-align: center; color: #0066B4;'>Veículos com Mais Multas</h2>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <h2 style="
+        text-align: center; 
+        color: #0066B4; 
+        border-bottom: 2px solid #0066B4; 
+        padding-bottom: 5px; 
+        display: inline-block;
+    ">
+        Veículos com mais multas
+    </h2>
+    """, 
+    unsafe_allow_html=True
+)
 
 # Filtrar apenas multas únicas com base no índice 5 (Auto de Infração)
 unique_fines = filtered_data.drop_duplicates(subset=[5])
@@ -392,7 +442,20 @@ st.plotly_chart(fig, use_container_width=True)
 required_columns = [8, 11, 5]
 missing_columns = [col for col in required_columns if col not in filtered_data.columns]
 if not missing_columns:
-    st.markdown("<h2 style='text-align: center; color: #0066B4;'>Infrações Mais Comuns</h2>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h2 style="
+            text-align: center; 
+            color: #0066B4; 
+            border-bottom: 2px solid #0066B4; 
+            padding-bottom: 5px; 
+            display: inline-block;
+        ">
+            Infrações Mais Comuns
+        </h2>
+        """, 
+        unsafe_allow_html=True
+    )
     filtered_infractions_data = filtered_data[required_columns]
     common_infractions_chart = create_common_infractions_chart(filtered_infractions_data)
     st.plotly_chart(common_infractions_chart, use_container_width=True)
@@ -401,7 +464,20 @@ else:
 
 # Distribuição por Dias da Semana
 if 9 in filtered_data.columns:
-    st.markdown("<h2 style='text-align: center; color: #0066B4;'>Distribuição por Dias da Semana</h2>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h2 style="
+            text-align: center; 
+            color: #0066B4; 
+            border-bottom: 2px solid #0066B4; 
+            padding-bottom: 5px; 
+            display: inline-block;
+        ">
+            Distribuição por Dia da Semana
+        </h2>
+        """, 
+        unsafe_allow_html=True
+    )
     weekday_infractions_chart = create_weekday_infractions_chart(filtered_data)
     st.plotly_chart(weekday_infractions_chart, use_container_width=True)
 else:
@@ -409,7 +485,20 @@ else:
 
 # Multas Acumuladas
 if 9 in filtered_data.columns:
-    st.markdown("<h2 style='text-align: center; color: #0066B4;'>Multas Acumuladas</h2>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h2 style="
+            text-align: center; 
+            color: #0066B4; 
+            border-bottom: 2px solid #0066B4; 
+            padding-bottom: 5px; 
+            display: inline-block;
+        ">
+            Multas Acumuladas
+        </h2>
+        """, 
+        unsafe_allow_html=True
+    )
     fines_accumulated_chart = create_fines_accumulated_chart(filtered_data)
     st.plotly_chart(fines_accumulated_chart, use_container_width=True)
 else:
