@@ -553,7 +553,7 @@ else:
     st.error("A coluna com índice 9 (Data da Infração) não foi encontrada nos dados.")
 
 # Multas Acumuladas
-if 9 in filtered_data.columns and 14 in filtered_data.columns:
+if 9 in filtered_data.columns:
     st.markdown(
         """
         <h2 style="
@@ -571,46 +571,7 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns:
         unsafe_allow_html=True
     )
 
-    # Remover duplicados com base no Auto de Infração (índice 5)
-    unique_fines_accumulated = filtered_data.drop_duplicates(subset=[5])
-
-    # Agrupar por mês e calcular os totais
-    accumulated_summary = (
-        unique_fines_accumulated.groupby(unique_fines_accumulated[9].dt.to_period("M"))
-        .agg(
-            Quantidade_de_Multas=('Auto de Infração', 'count'),
-            Valor_Total=('Valor a ser pago R$', 'sum')
-        )
-        .reset_index()
-    )
-
-    # Converter o período para formato de data para o gráfico
-    accumulated_summary[9] = accumulated_summary[9].dt.to_timestamp()
-
-    # Criar o gráfico de linha
-    accumulated_chart = px.line(
-        accumulated_summary,
-        x=9,
-        y=['Quantidade_de_Multas', 'Valor_Total'],
-        title="",
-        labels={
-            "value": "Valores",
-            "variable": "Métricas",
-            "9": "Período"
-        },
-        markers=True,
-    )
-
-    # Ajustar layout do gráfico
-    accumulated_chart.update_traces(marker=dict(size=8))
-    accumulated_chart.update_layout(
-        xaxis_title="",
-        yaxis_title="Valores",
-        template="plotly_white",
-        legend_title="Métricas"
-    )
-
-    # Mostrar o gráfico no Streamlit
-    st.plotly_chart(accumulated_chart, use_container_width=True)
+    fines_accumulated_chart = create_fines_accumulated_chart(filtered_data)
+    st.plotly_chart(fines_accumulated_chart, use_container_width=True)
 else:
-    st.error("As colunas necessárias para o gráfico de multas acumuladas não foram encontradas.")
+    st.error("A coluna com índice 9 (Data da Infração) não foi encontrada nos dados.")
