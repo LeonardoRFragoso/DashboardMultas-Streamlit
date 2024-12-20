@@ -553,7 +553,7 @@ else:
     st.error("A coluna com índice 9 (Data da Infração) não foi encontrada nos dados.")
 
 # Multas Acumuladas
-if 9 in data.columns and 14 in data.columns and 5 in data.columns:
+if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_data.columns:
     st.markdown(
         """
         <h2 style="
@@ -573,7 +573,7 @@ if 9 in data.columns and 14 in data.columns and 5 in data.columns:
 
     try:
         # Remover duplicados com base no Auto de Infração (índice 5)
-        unique_fines_accumulated = data.drop_duplicates(subset=[5])
+        unique_fines_accumulated = filtered_data.drop_duplicates(subset=[5])
 
         # Criar uma lista de todos os meses de janeiro a dezembro do ano atual
         all_months = pd.period_range(
@@ -595,7 +595,7 @@ if 9 in data.columns and 14 in data.columns and 5 in data.columns:
         # Ajustar o índice para incluir todos os meses de janeiro a dezembro
         accumulated_summary.set_index(9, inplace=True)
         accumulated_summary = accumulated_summary.reindex(all_months, fill_value=0).reset_index()
-        accumulated_summary.rename(columns={9: "Período"}, inplace=True)
+        accumulated_summary.rename(columns={"index": "Período"}, inplace=True)
 
         # Converter o período para formato de data para o gráfico
         accumulated_summary["Período"] = accumulated_summary["Período"].dt.to_timestamp()
