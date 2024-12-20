@@ -63,7 +63,7 @@ def preprocess_data(file_buffer):
     return data
 
 # Load secrets
-drive_credentials = json.loads(st.secrets["general"]["CREDENTIALS"])
+drive_credentials = st.secrets["general"]["CREDENTIALS"]
 drive_file_id = st.secrets["file_data"]["ultima_planilha_id"]
 api_key = st.secrets["general"]["API_KEY"]
 
@@ -91,7 +91,7 @@ st.markdown(
 )
 
 st.info("Carregando dados do Google Drive...")
-file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
+file_buffer = download_file_from_drive(drive_file_id, eval(drive_credentials))
 data = preprocess_data(file_buffer)
 st.info("Dados carregados corretamente")
 
@@ -111,10 +111,10 @@ filtered_data.rename(columns={
     12: 'Local da Infração',
     14: 'Valor a ser pago R$',
     1: 'Placa Relacionada',
-    5: 'Auto de Infração',
+    2: 'Auto de Infração',
     9: 'Data da Infração',
-    8: 'Enquadramento da Infração',
-    11: 'Descrição'
+    7: 'Enquadramento da Infração',
+    8: 'Descrição'
 }, inplace=True)
 
 # Garantir que Latitude e Longitude existam
@@ -141,7 +141,7 @@ if not valid_coordinates.empty:
         valid_coordinates['Longitude'].mean()
     ]
 else:
-    map_center = [-22.9068, -43.1729]  # Rio de Janeiro, Brasil
+    map_center = [-23.5505, -46.6333]  # São Paulo, Brasil
 
 # Indicadores principais
 st.markdown("<h2 style='text-align: center; color: #0066B4;'>Indicadores Principais</h2>", unsafe_allow_html=True)

@@ -4,7 +4,16 @@ from geo_utils import load_cache, save_cache, get_cached_coordinates
 from streamlit_folium import st_folium
 
 def create_geo_distribution_map(filtered_data, api_key):
-    """Create a geographical map for fines distribution."""
+    """
+    Create a geographical map for fines distribution.
+    
+    Parameters:
+        filtered_data (DataFrame): The filtered data containing fines information.
+        api_key (str): The API key for geocoding services.
+
+    Returns:
+        map_object (folium.Map): The generated folium map.
+    """
     # Load cache
     coordinates_cache = load_cache()
 

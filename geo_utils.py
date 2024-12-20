@@ -1,11 +1,9 @@
 import os
 import json
 import requests
-import streamlit as st
 
 # Caminho do arquivo de cache de coordenadas
 CACHE_FILE = "coordinates_cache.json"
-
 
 def load_cache():
     """
@@ -22,7 +20,6 @@ def load_cache():
             print(f"Erro ao carregar o cache: {e}")
     return {}
 
-
 def save_cache(cache):
     """
     Salva o cache no arquivo JSON.
@@ -35,7 +32,6 @@ def save_cache(cache):
             json.dump(cache, file, indent=4)
     except IOError as e:
         print(f"Erro ao salvar o cache: {e}")
-
 
 def get_coordinates(local, api_key):
     """
@@ -55,13 +51,13 @@ def get_coordinates(local, api_key):
         data = response.json()
         if 'results' in data and data['results']:
             geometry = data['results'][0]['geometry']
-            return geometry['lat'], geometry['lng']
-        else:
-            print(f"Nenhum resultado encontrado para o local: {local}")
+            lat, lng = geometry['lat'], geometry['lng']
+            if lat is not None and lng is not None:
+                return lat, lng
+        print(f"Nenhum resultado válido encontrado para o local: {local}")
     except requests.RequestException as e:
         print(f"Erro ao buscar coordenadas: {e}")
     return None, None
-
 
 def get_cached_coordinates(local, api_key, cache):
     """
@@ -77,24 +73,16 @@ def get_cached_coordinates(local, api_key, cache):
     """
     # Busca no cache
     if local in cache:
-        return cache[local]
+        lat, lng = cache[local]
+        if lat is not None and lng is not None:
+            return lat, lng
 
     # Caso não esteja no cache, buscar na API
     lat, lng = get_coordinates(local, api_key)
     if lat is not None and lng is not None:
         cache[local] = (lat, lng)
         save_cache(cache)  # Atualiza o cache
-    return lat, lng
+        return lat, lng
 
-
-def get_api_key():
-    """
-    Obtém a chave de API do OpenCage do Streamlit secrets.
-
-    Returns:
-        str: A chave de API.
-    """
-    try:
-        return st.secrets["API_KEY"]
-    except KeyError:
-        raise RuntimeError("API_KEY não configurada nos secrets do Streamlit.")
+    # Retorno padrão em caso de falha
+    return None, None

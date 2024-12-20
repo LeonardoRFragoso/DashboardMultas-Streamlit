@@ -1,5 +1,6 @@
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
 
 def get_vehicle_fines_data(df):
     """
@@ -25,8 +26,8 @@ def get_vehicle_fines_data(df):
     df = df.copy()
 
     # Converter 'Data da Infração' para datetime e filtrar apenas o ano atual
-    df[date_column] = pd.to_datetime(df[date_column], errors='coerce')
-    df = df[df[date_column].dt.year == 2024]
+    df[date_column] = pd.to_datetime(df[date_column], errors='coerce', dayfirst=True)
+    df = df[df[date_column].dt.year == datetime.now().year]
 
     # Garantir que 'Valor a ser pago R$' esteja no formato numérico
     try:
@@ -45,8 +46,7 @@ def get_vehicle_fines_data(df):
     df = df.drop_duplicates(subset=['Auto de Infração'])
 
     # Remover registros com placas nulas ou inválidas
-    if df['Placa Relacionada'].isnull().any():
-        df = df.dropna(subset=['Placa Relacionada'])
+    df = df.dropna(subset=['Placa Relacionada'])
 
     # Agrupar os dados por 'Placa Relacionada'
     fines_by_vehicle = df.groupby('Placa Relacionada').agg(
@@ -56,10 +56,6 @@ def get_vehicle_fines_data(df):
 
     # Ordenar por número de multas em ordem decrescente
     fines_by_vehicle = fines_by_vehicle.sort_values(by='num_fines', ascending=False)
-
-    # Validar se há dados suficientes
-    if fines_by_vehicle.empty:
-        raise ValueError("Nenhum dado disponível após os filtros aplicados.")
 
     return fines_by_vehicle
 
@@ -101,7 +97,7 @@ def create_vehicle_fines_chart(df):
     )
 
     fig.update_layout(
-        title="Top 10 Veículos com Mais Multas (Ano Atual)",
+        title="",
         xaxis_title='',
         yaxis_title='Total das Multas (R$)',
         coloraxis_colorbar=dict(title='Número de Multas'),

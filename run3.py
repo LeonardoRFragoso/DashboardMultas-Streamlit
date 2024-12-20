@@ -141,7 +141,7 @@ if not valid_coordinates.empty:
         valid_coordinates['Longitude'].mean()
     ]
 else:
-    map_center = [-22.9068, -43.1729]  # Rio de Janeiro, Brasil
+    map_center = [-23.5505, -46.6333]  # São Paulo, Brasil
 
 # Indicadores principais
 st.markdown("<h2 style='text-align: center; color: #0066B4;'>Indicadores Principais</h2>", unsafe_allow_html=True)
