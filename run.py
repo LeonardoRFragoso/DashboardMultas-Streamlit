@@ -552,7 +552,7 @@ if 9 in filtered_data.columns:
 else:
     st.error("A coluna com índice 9 (Data da Infração) não foi encontrada nos dados.")
 
-# Gráfico de Multas Acumuladas
+# Multas Acumuladas
 if 9 in filtered_data.columns and 14 in filtered_data.columns:
     st.markdown(
         """
