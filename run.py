@@ -226,14 +226,15 @@ st.markdown(
         border-bottom: 2px solid #0066B4; 
         padding-bottom: 5px; 
         margin: 20px auto; 
-        display: inline-block; 
-        width: fit-content;
+        display: block; 
+        width: 100%; 
     ">
         Indicadores Principais
     </h2>
     """, 
     unsafe_allow_html=True
 )
+
 
 # Indicador 1: Total de Multas (Auto de Infração únicos)
 total_multas = data[5].nunique()  # Contar registros únicos no índice 5
@@ -299,14 +300,15 @@ st.markdown(
         border-bottom: 2px solid #0066B4; 
         padding-bottom: 5px; 
         margin: 20px auto; 
-        display: inline-block; 
-        width: fit-content;
+        display: block; 
+        width: 100%; 
     ">
         Distribuição Geográfica
     </h2>
     """, 
     unsafe_allow_html=True
 )
+
 
 # Configurar local inicial do mapa com base nas coordenadas médias das multas
 if not filtered_data.empty and 'Latitude' in filtered_data.columns and 'Longitude' in filtered_data.columns:
@@ -358,14 +360,15 @@ if map_click_data and map_click_data.get("last_object_clicked"):
                 border-bottom: 2px solid #0066B4; 
                 padding-bottom: 5px; 
                 margin: 20px auto; 
-                display: inline-block; 
-                width: fit-content;
+                display: block; 
+                width: 100%; 
             ">
                 Detalhes das Multas para a Localização Selecionada
             </h2>
             """, 
             unsafe_allow_html=True
         )
+
         # Exibir detalhes das multas no DataFrame
         st.dataframe(
             selected_fines[[1, 12, 14, 9, 11]].rename(
@@ -393,14 +396,15 @@ st.markdown(
         border-bottom: 2px solid #0066B4; 
         padding-bottom: 5px; 
         margin: 20px auto; 
-        display: inline-block; 
-        width: fit-content;
+        display: block; 
+        width: 100%; 
     ">
-        Veículos com mais multas
+        Veículos com Mais Multas
     </h2>
     """, 
     unsafe_allow_html=True
 )
+
 
 # Filtrar apenas multas únicas com base no índice 5 (Auto de Infração)
 unique_fines = filtered_data.drop_duplicates(subset=[5])
@@ -455,14 +459,15 @@ if not missing_columns:
             border-bottom: 2px solid #0066B4; 
             padding-bottom: 5px; 
             margin: 20px auto; 
-            display: inline-block; 
-            width: fit-content;
+            display: block; 
+            width: 100%; 
         ">
             Infrações Mais Comuns
         </h2>
         """, 
         unsafe_allow_html=True
     )
+
     filtered_infractions_data = filtered_data[required_columns]
     common_infractions_chart = create_common_infractions_chart(filtered_infractions_data)
     st.plotly_chart(common_infractions_chart, use_container_width=True)
@@ -479,8 +484,8 @@ if 9 in filtered_data.columns:
             border-bottom: 2px solid #0066B4; 
             padding-bottom: 5px; 
             margin: 20px auto; 
-            display: inline-block; 
-            width: fit-content;
+            display: block; 
+            width: 100%; 
         ">
             Distribuição por Dia da Semana
         </h2>
@@ -551,8 +556,8 @@ if 9 in filtered_data.columns:
             border-bottom: 2px solid #0066B4; 
             padding-bottom: 5px; 
             margin: 20px auto; 
-            display: inline-block; 
-            width: fit-content;
+            display: block; 
+            width: 100%; 
         ">
             Multas Acumuladas
         </h2>
