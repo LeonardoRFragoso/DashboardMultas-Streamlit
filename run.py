@@ -446,44 +446,33 @@ fig.update_layout(
 # Mostrar o gráfico no Streamlit
 st.plotly_chart(fig, use_container_width=True)
 
+
 # Infrações Mais Comuns
-required_columns = [8, 11, 5]  # Código da infração, Descrição da infração, Auto de Infração
-
-if all(col in filtered_data.columns for col in required_columns):  # Verificar se as colunas existem
-    # Filtrar registros únicos com base no Auto de Infração
-    unique_infractions = filtered_data.drop_duplicates(subset=[5])
-
-    # Agrupar por Código de Infração e Descrição
-    infraction_summary = (
-        unique_infractions.groupby(8)  # Índice do Código de Infração
-        .agg(
-            Quantidade=('Auto de Infração', 'count'),  # Contar ocorrências únicas pelo Auto de Infração
-            Descrição=(11, 'first')   # Pegar a descrição correspondente
-        )
-        .reset_index()
-        .sort_values(by='Quantidade', ascending=False)
+required_columns = [8, 11, 5]
+missing_columns = [col for col in required_columns if col not in filtered_data.columns]
+if not missing_columns:
+    st.markdown(
+        """
+        <h2 style="
+            text-align: center; 
+            color: #0066B4; 
+            border-bottom: 2px solid #0066B4; 
+            padding-bottom: 5px; 
+            margin: 20px auto; 
+            display: block; 
+            width: 100%; 
+        ">
+            Infrações Mais Comuns
+        </h2>
+        """, 
+        unsafe_allow_html=True
     )
 
-    # Criar o gráfico atualizado
-    fig = px.bar(
-        infraction_summary,
-        x='Descrição',
-        y='Quantidade',
-        text='Quantidade',
-        labels={'Descrição': 'Descrição da Infração', 'Quantidade': 'Ocorrências'}
-    )
-    fig.update_traces(textposition='outside')
-    fig.update_layout(
-        xaxis_title="Descrição da Infração",
-        yaxis_title="Quantidade de Ocorrências",
-        template="plotly_white",
-        title="Infrações Mais Comuns"
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    filtered_infractions_data = filtered_data[required_columns]
+    common_infractions_chart = create_common_infractions_chart(filtered_infractions_data)
+    st.plotly_chart(common_infractions_chart, use_container_width=True)
 else:
-    missing_columns = [col for col in required_columns if col not in filtered_data.columns]
-    st.error(f"As colunas necessárias estão ausentes: {missing_columns}")
-
+    st.error(f"As colunas com os índices {missing_columns} não foram encontradas nos dados.")
 
 # Distribuição por Dias da Semana
 if 9 in filtered_data.columns:
