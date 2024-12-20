@@ -446,11 +446,8 @@ fig.update_layout(
 # Mostrar o gráfico no Streamlit
 st.plotly_chart(fig, use_container_width=True)
 
-
 # Infrações Mais Comuns
-required_columns = [8, 11, 5]
-missing_columns = [col for col in required_columns if col not in filtered_data.columns]
-if not missing_columns:
+if 8 in filtered_data.columns and 5 in filtered_data.columns and 11 in filtered_data.columns:
     st.markdown(
         """
         <h2 style="
@@ -468,11 +465,40 @@ if not missing_columns:
         unsafe_allow_html=True
     )
 
-    filtered_infractions_data = filtered_data[required_columns]
-    common_infractions_chart = create_common_infractions_chart(filtered_infractions_data)
-    st.plotly_chart(common_infractions_chart, use_container_width=True)
+    # Filtrar registros únicos com base no identificador do Auto de Infração
+    unique_infractions = filtered_data.drop_duplicates(subset=[5])  # Substitua 5 pelo índice correto do Auto de Infração
+
+    # Agrupar as infrações por código e contar ocorrências
+    infraction_summary = (
+        unique_infractions.groupby(8)  # Substitua 8 pelo índice da coluna de código da infração
+        .agg(
+            Quantidade=('8', 'count'),  # Contar ocorrências únicas
+            Descrição=('11', 'first')  # Substitua 11 pela coluna de descrição da infração
+        )
+        .reset_index()
+        .sort_values(by='Quantidade', ascending=False)
+    )
+
+    # Criar o gráfico com Plotly Express
+    fig = px.bar(
+        infraction_summary,
+        x='Descrição',  # Coluna de descrição para o eixo X
+        y='Quantidade',  # Quantidade para o eixo Y
+        text='Quantidade',
+        title='',
+        labels={'Descrição': 'Descrição da Infração', 'Quantidade': 'Ocorrências'}
+    )
+
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis_title="Descrição da Infração",
+        yaxis_title="Quantidade de Ocorrências",
+        template="plotly_white"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 else:
-    st.error(f"As colunas com os índices {missing_columns} não foram encontradas nos dados.")
+    st.error("As colunas necessárias para o gráfico de infrações mais comuns não foram encontradas.")
 
 # Distribuição por Dias da Semana
 if 9 in filtered_data.columns:
