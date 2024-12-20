@@ -446,60 +446,36 @@ fig.update_layout(
 # Mostrar o gráfico no Streamlit
 st.plotly_chart(fig, use_container_width=True)
 
-# Infrações Mais Comuns
-if all(col in filtered_data.columns for col in [8, 11, 5]):  # Verifique se as colunas existem
-    st.markdown(
-        """
-        <h2 style="
-            text-align: center; 
-            color: #0066B4; 
-            border-bottom: 2px solid #0066B4; 
-            padding-bottom: 5px; 
-            margin: 20px auto; 
-            display: block; 
-            width: 100%; 
-        ">
-            Infrações Mais Comuns
-        </h2>
-        """, 
-        unsafe_allow_html=True
-    )
+# Código para Infrações Mais Comuns
+required_columns = [8, 11, 5]  # Substitua pelos índices ou nomes reais após a verificação
+if all(col in filtered_data.columns for col in required_columns):  # Verifica se as colunas existem
+    unique_infractions = filtered_data.drop_duplicates(subset=[5])  # Use o índice/nome correto
 
-    # Filtrar registros únicos com base no identificador do Auto de Infração
-    unique_infractions = filtered_data.drop_duplicates(subset=[5])
-
-    # Agrupar as infrações por código e contar ocorrências
+    # Ajuste de agrupamento
     infraction_summary = (
-        unique_infractions.groupby(8)  # Índice da coluna de código da infração
+        unique_infractions.groupby(8)  # Substitua pelo índice/nome real da coluna de código de infração
         .agg(
-            Quantidade=('5', 'count'),  # Contar ocorrências únicas
-            Descrição=('11', 'first')  # Primeira descrição associada à infração
+            Quantidade=('5', 'count'),  # Substitua pelos índices/nomes reais
+            Descrição=('11', 'first')   # Substitua pelos índices/nomes reais
         )
         .reset_index()
         .sort_values(by='Quantidade', ascending=False)
     )
 
-    # Criar o gráfico com Plotly Express
+    # Gráfico atualizado
     fig = px.bar(
         infraction_summary,
-        x='Descrição',  # Coluna de descrição para o eixo X
-        y='Quantidade',  # Quantidade para o eixo Y
+        x='Descrição',  # Ajuste se necessário
+        y='Quantidade',
         text='Quantidade',
-        title='',
         labels={'Descrição': 'Descrição da Infração', 'Quantidade': 'Ocorrências'}
     )
-
     fig.update_traces(textposition='outside')
-    fig.update_layout(
-        xaxis_title="Descrição da Infração",
-        yaxis_title="Quantidade de Ocorrências",
-        template="plotly_white"
-    )
-
+    fig.update_layout(template="plotly_white")
     st.plotly_chart(fig, use_container_width=True)
 else:
-    missing_columns = [col for col in [8, 11, 5] if col not in filtered_data.columns]
-    st.error(f"As colunas necessárias para o gráfico de infrações mais comuns estão ausentes: {missing_columns}")
+    missing_columns = [col for col in required_columns if col not in filtered_data.columns]
+    st.error(f"As colunas necessárias estão ausentes: {missing_columns}")
 
 
 # Distribuição por Dias da Semana
