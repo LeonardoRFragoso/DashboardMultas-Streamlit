@@ -446,7 +446,7 @@ fig.update_layout(
 # Mostrar o gráfico no Streamlit
 st.plotly_chart(fig, use_container_width=True)
 
-# Índices necessários para Infrações Mais Comuns
+# Infrações Mais Comuns
 required_columns = [8, 11, 5]  # Código da infração, Descrição da infração, Auto de Infração
 
 if all(col in filtered_data.columns for col in required_columns):  # Verificar se as colunas existem
