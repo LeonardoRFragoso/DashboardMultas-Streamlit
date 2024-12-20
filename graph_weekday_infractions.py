@@ -11,22 +11,22 @@ def create_weekday_infractions_chart(data):
     Returns:
         fig (plotly.graph_objects.Figure): A bar chart showing the distribution of fines by day of the week.
     """
-    # Verificar se a coluna 'Data da Infração' existe
-    if 'Data da Infração' not in data.columns:
-        raise KeyError("A coluna 'Data da Infração' não está presente no DataFrame.")
+    # Verificar se a coluna 'Data da Infração' (índice 9) existe
+    if 9 not in data.columns:
+        raise KeyError("A coluna com índice 9 (Data da Infração) não está presente no DataFrame.")
 
-    # Garantir que 'Data da Infração' é um objeto datetime
-    data['Data da Infração'] = pd.to_datetime(data['Data da Infração'], errors='coerce')
+    # Garantir que a coluna com índice 9 é um objeto datetime
+    data[9] = pd.to_datetime(data[9], errors='coerce')
 
     # Remover datas inválidas
-    data = data.dropna(subset=['Data da Infração'])
+    data = data.dropna(subset=[9])
 
     # Mapear os dias da semana
     dias_semana = {
         0: 'Segunda-feira', 1: 'Terça-feira', 2: 'Quarta-feira',
         3: 'Quinta-feira', 4: 'Sexta-feira', 5: 'Sábado', 6: 'Domingo'
     }
-    data['Dia da Semana'] = data['Data da Infração'].dt.weekday.map(dias_semana)
+    data['Dia da Semana'] = data[9].dt.weekday.map(dias_semana)
 
     # Contar a quantidade de multas por dia da semana
     weekday_counts = data['Dia da Semana'].value_counts().reindex(

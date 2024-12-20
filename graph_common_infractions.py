@@ -11,16 +11,29 @@ def create_common_infractions_chart(data):
     Returns:
         fig (plotly.graph_objects.Figure): A bar chart of the most common infractions.
     """
-    # Agrupar por 'Enquadramento da Infração' para calcular frequências
-    infraction_data = data.groupby(['Enquadramento da Infração', 'Descrição'])['Auto de Infração'].count().reset_index()
-    infraction_data.rename(columns={'Auto de Infração': 'Frequência'}, inplace=True)
+    # Índices corretos das colunas
+    infraction_column = 8  # Índice da coluna 'Enquadramento da Infração'
+    description_column = 11  # Índice da coluna 'Descrição'
+    auto_infraction_column = 5  # Índice da coluna 'Auto de Infração'
+
+    # Verificar se os índices estão presentes no DataFrame
+    required_columns = [infraction_column, description_column, auto_infraction_column]
+    for col in required_columns:
+        if col not in data.columns:
+            raise KeyError(f"A coluna com índice {col} não está presente no DataFrame.")
+
+    # Agrupar os dados por 'Enquadramento da Infração' e 'Descrição'
+    infraction_data = data.groupby([infraction_column, description_column])[auto_infraction_column].count().reset_index()
+
+    # Renomear colunas para facilitar a manipulação
+    infraction_data.columns = ['Enquadramento', 'Descrição', 'Frequência']
 
     # Ordenar pelos mais frequentes
     infraction_data = infraction_data.sort_values(by='Frequência', ascending=False).head(10)
 
     # Criar o texto formatado lado a lado
     infraction_data['Texto'] = (
-        infraction_data['Enquadramento da Infração'] + " | " +
+        infraction_data['Enquadramento'] + " | " +
         infraction_data['Frequência'].astype(str) + " ocorrências"
     )
 

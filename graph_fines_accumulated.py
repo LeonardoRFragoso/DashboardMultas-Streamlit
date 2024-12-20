@@ -13,18 +13,19 @@ def create_fines_accumulated_chart(data, period='M'):
     Retorna:
         fig (plotly.graph_objects.Figure): Um gráfico de linhas mostrando quantidade e valor acumulado de multas.
     """
-    # Garantir que 'Data da Infração' seja datetime
-    data['Data da Infração'] = pd.to_datetime(data['Data da Infração'], errors='coerce')
+    # Garantir que a coluna com índice 9 (Data da Infração) seja datetime
+    data[9] = pd.to_datetime(data[9], errors='coerce')
 
     # Remover linhas com datas inválidas
-    data = data.dropna(subset=['Data da Infração'])
+    data = data.dropna(subset=[9])
     
-    # Filtrar apenas o ano atual (2024)
-    data = data[data['Data da Infração'].dt.year == 2024]
+    # Filtrar apenas o ano atual (de janeiro a dezembro)
+    current_year = datetime.now().year
+    data = data[(data[9] >= pd.Timestamp(f"{current_year}-01-01")) & (data[9] <= pd.Timestamp(f"{current_year}-12-31"))]
 
-    # Garantir que 'Valor a ser pago R$' esteja em formato numérico
-    data['Valor a ser pago R$'] = (
-        data['Valor a ser pago R$']
+    # Garantir que a coluna com índice 14 (Valor a ser pago R$) esteja em formato numérico
+    data[14] = (
+        data[14]
         .astype(str)
         .str.replace(r'[^\d,.-]', '', regex=True)
         .str.replace(',', '.')
@@ -32,12 +33,12 @@ def create_fines_accumulated_chart(data, period='M'):
     )
 
     # Criar um campo de período com base nos meses do ano
-    data['Período'] = data['Data da Infração'].dt.to_period('M').dt.to_timestamp()
+    data['Período'] = data[9].dt.to_period('M').dt.to_timestamp()
 
     # Agregar dados: contar multas e somar valores por período
     fines_by_period = data.groupby('Período').agg(
-        Quantidade_de_Multas=('Auto de Infração', 'nunique'),
-        Valor_Total=('Valor a ser pago R$', 'sum')
+        Quantidade_de_Multas=(5, 'nunique'),  # Índice 5 representa 'Auto de Infração'
+        Valor_Total=(14, 'sum')               # Índice 14 representa 'Valor a ser pago R$'
     ).reset_index()
 
     # Criar o gráfico com duas linhas: Quantidade de Multas e Valor Total
@@ -51,7 +52,6 @@ def create_fines_accumulated_chart(data, period='M'):
         },
         title=''
     )
-
 
     # Personalizar o layout
     fig.update_traces(mode='lines+markers', marker=dict(size=8))

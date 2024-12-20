@@ -12,15 +12,17 @@ def get_vehicle_fines_data(df):
     Retorna:
         DataFrame: Um DataFrame com os dados agregados por veículo.
     """
-    # Nome correto da coluna de valor de multas
-    value_column = 'Valor a ser pago R$'
-    date_column = 'Data da Infração'
+    # Índices corretos das colunas
+    plate_column = 1  # Índice da coluna 'Placa Relacionada'
+    value_column = 14  # Índice da coluna 'Valor a ser pago R$'
+    infraction_column = 5  # Índice da coluna 'Auto de Infração'
+    date_column = 9  # Índice da coluna 'Data da Infração'
 
     # Verificar colunas essenciais
-    required_columns = ['Placa Relacionada', value_column, 'Auto de Infração', date_column]
+    required_columns = [plate_column, value_column, infraction_column, date_column]
     for col in required_columns:
         if col not in df.columns:
-            raise KeyError(f"A coluna '{col}' não está presente no DataFrame.")
+            raise KeyError(f"A coluna com índice {col} não está presente no DataFrame.")
 
     # Copiar o DataFrame
     df = df.copy()
@@ -43,16 +45,21 @@ def get_vehicle_fines_data(df):
         raise ValueError(f"Erro ao converter valores monetários: {e}")
 
     # Remover duplicatas baseadas no 'Auto de Infração' (registro único de multa)
-    df = df.drop_duplicates(subset=['Auto de Infração'])
+    df = df.drop_duplicates(subset=[infraction_column])
 
     # Remover registros com placas nulas ou inválidas
-    df = df.dropna(subset=['Placa Relacionada'])
+    df = df.dropna(subset=[plate_column])
 
     # Agrupar os dados por 'Placa Relacionada'
-    fines_by_vehicle = df.groupby('Placa Relacionada').agg(
+    fines_by_vehicle = df.groupby(plate_column).agg(
         total_fines=(value_column, 'sum'),
-        num_fines=('Auto de Infração', 'nunique')  # Contar apenas multas únicas
+        num_fines=(infraction_column, 'nunique')  # Contar apenas multas únicas
     ).reset_index()
+
+    # Renomear as colunas para facilitar a leitura no gráfico
+    fines_by_vehicle.rename(columns={
+        plate_column: 'Placa Relacionada'
+    }, inplace=True)
 
     # Ordenar por número de multas em ordem decrescente
     fines_by_vehicle = fines_by_vehicle.sort_values(by='num_fines', ascending=False)

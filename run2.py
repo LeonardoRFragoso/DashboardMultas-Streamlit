@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from graph_geo_distribution import create_geo_distribution_map
-from geo_utils import get_cached_coordinates
+from geo_utils import get_cached_coordinates, load_cache, save_cache
 from graph_vehicles_fines import create_vehicle_fines_chart
 from graph_common_infractions import create_common_infractions_chart
 from graph_weekday_infractions import create_weekday_infractions_chart
@@ -16,18 +16,20 @@ from folium import Map, Marker, Popup
 from folium.features import CustomIcon
 from streamlit_folium import st_folium
 
+CACHE_FILE = "coordinates_cache.json"
+
 def load_cache():
-    """Load coordinates cache from a JSON file."""
+    """Carregar o cache de coordenadas de um arquivo JSON."""
     try:
-        with open("coordinates_cache.json", "r") as file:
+        with open(CACHE_FILE, "r") as file:
             return json.load(file)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 def save_cache(cache):
-    """Save coordinates cache to a JSON file."""
-    with open("coordinates_cache.json", "w") as file:
-        json.dump(cache, file)
+    """Salvar o cache de coordenadas em um arquivo JSON."""
+    with open(CACHE_FILE, "w") as file:
+        json.dump(cache, file, indent=4)
 
 def download_file_from_drive(file_id, credentials_info):
     """Download a file from Google Drive using its file ID."""
@@ -44,10 +46,11 @@ def download_file_from_drive(file_id, credentials_info):
     file_buffer.seek(0)
     return file_buffer
 
+
 def preprocess_data(file_buffer):
     """Preprocess the data from the file buffer."""
     data = pd.read_excel(file_buffer)
-    data.columns = range(len(data.columns))
+    data.columns = range(len(data.columns))  # Reindex columns
 
     for col_index in [13, 14]:
         data[col_index] = (
@@ -58,131 +61,245 @@ def preprocess_data(file_buffer):
             .astype(float)
         )
 
+    # Garantir que índice 9 seja tratado como datetime
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
 
     return data
 
-# Load secrets
-drive_credentials = st.secrets["general"]["CREDENTIALS"]
-drive_file_id = st.secrets["file_data"]["ultima_planilha_id"]
-api_key = st.secrets["general"]["API_KEY"]
 
+def ensure_coordinates(data, cache, api_key):
+    """Ensure Latitude and Longitude columns are populated."""
+    def get_coordinates_with_cache(location):
+        if location not in cache:
+            cache[location] = get_cached_coordinates(location, api_key, cache)
+        return cache[location]
+
+    # Aplicar coordenadas para cada local no índice 12
+    data[['Latitude', 'Longitude']] = data[12].apply(
+        lambda loc: pd.Series(get_coordinates_with_cache(loc))
+    )
+    save_cache(cache)  # Salvar coordenadas atualizadas no cache
+    return data
+
+# Load secrets with error handling
+try:
+    drive_credentials = json.loads(st.secrets["general"]["CREDENTIALS"])
+    drive_file_id = st.secrets["file_data"]["ultima_planilha_id"]
+    api_key = st.secrets["general"]["API_KEY"]
+except KeyError as e:
+    st.error(f"Erro ao carregar os segredos: {e}")
+    st.stop()
+
+# Streamlit setup
 st.set_page_config(page_title="Multas Dashboard", layout="wide")
 
-with open("styles.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# CSS Styling
+st.markdown(
+    """
+    <style>
+        .titulo-dashboard-container {
+            display: flex;
+            flex-direction: column; /* Alinha os itens na vertical */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin: 0 auto;
+            padding: 25px 20px;
+            background: linear-gradient(to right, #F37529, rgba(255, 255, 255, 0.8));
+            border-radius: 15px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+        }
+        .titulo-dashboard {
+            font-size: 50px;
+            font-weight: bold;
+            color: #F37529;
+            text-transform: uppercase;
+            margin: 0;
+        }
+        .subtitulo-dashboard {
+            font-size: 18px; /* Tamanho da fonte do subtítulo */
+            color: #555555; /* Cor do subtítulo */
+            margin: 10px 0 0 0; /* Espaçamento acima do subtítulo */
+        }
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-container img {
+            max-width: 200px;
+            height: auto;
+        }
+        .indicadores-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        .indicador {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: #FFFFFF;
+            border: 4px solid #0066B4;
+            border-radius: 15px;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+            width: 260px;
+            height: 160px;
+            padding: 10px;
+        }
+        .indicador span {
+            font-size: 18px;
+            color: #0066B4;
+        }
+        .indicador p {
+            font-size: 38px;
+            color: #0066B4;
+            margin: 0;
+            font-weight: bold;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
+# Logo
 st.markdown(
     f"""
     <div class="logo-container">
         <img src="{st.secrets['image']['logo_url']}" alt="Logo da Empresa">
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
+# Logo and Header
 st.markdown(
-    """
-    <div style="display: flex; justify-content: center; align-items: center; text-align: center; margin: 0 auto; background: linear-gradient(to right, #F37529, rgba(255, 255, 255, 0.8)); border-radius: 15px; padding: 20px;">
-        <h1 style="font-size: 36px; color: #FFFFFF; text-transform: uppercase; margin: 0;">Dashboard de Multas</h1>
+    f"""
+    <div class="titulo-dashboard-container">
+        <h1 class="titulo-dashboard">Torre de Controle Itracker - Dashboard de Multas</h1>
+        <p class="subtitulo-dashboard">Monitorando em tempo real as consultas de multas no DETRAN-RJ</p>
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
+# Load and preprocess data
 st.info("Carregando dados do Google Drive...")
-file_buffer = download_file_from_drive(drive_file_id, eval(drive_credentials))
+file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
 data = preprocess_data(file_buffer)
-st.info("Dados carregados corretamente")
 
-# Filtros
+if data.empty:
+    st.error("Os dados carregados estão vazios. Verifique o arquivo de origem.")
+    st.stop()
+
+# Ensure required columns
+required_columns = [1, 5, 12, 14, 9]
+missing_columns = [col for col in required_columns if col not in data.columns]
+if missing_columns:
+    st.error(f"As seguintes colunas estão ausentes: {missing_columns}")
+    st.stop()
+
+# Filters
 data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
 data_fim = st.date_input("Data Final", value=datetime.now())
+filtered_data = data[
+    (data[9] >= pd.Timestamp(data_inicio)) & 
+    (data[9] <= pd.Timestamp(data_fim))
+]
 
-if st.button("Aplicar Filtros"):
-    filtered_data = data[
-        (data[9] >= pd.Timestamp(data_inicio)) &
-        (data[9] <= pd.Timestamp(data_fim))
-    ]
-else:
-    filtered_data = data.copy()
+# Ensure coordinates and cache
+cache = load_cache()  # Carregar coordenadas do cache
+filtered_data = ensure_coordinates(filtered_data, cache, api_key)
 
-filtered_data.rename(columns={
-    12: 'Local da Infração',
-    14: 'Valor a ser pago R$',
-    1: 'Placa Relacionada',
-    2: 'Auto de Infração',
-    9: 'Data da Infração',
-    7: 'Enquadramento da Infração',
-    8: 'Descrição'
-}, inplace=True)
+# Indicadores Principais - Atualizado
+st.markdown("<h2 class='titulo-secao'>Indicadores Principais</h2>", unsafe_allow_html=True)
 
-# Garantir que Latitude e Longitude existam
-if 'Local da Infração' in filtered_data.columns:
-    cache = load_cache()
-    def get_coordinates_with_cache(location):
-        if location not in cache:
-            cache[location] = get_cached_coordinates(location, api_key, cache)
-        return cache[location]
+# Indicador 1: Total de Multas (Auto de Infração únicos)
+total_multas = data[5].nunique()  # Contar registros únicos no índice 5
 
-    filtered_data[['Latitude', 'Longitude']] = filtered_data['Local da Infração'].apply(
-        lambda loc: pd.Series(get_coordinates_with_cache(loc))
-    )
-    save_cache(cache)
-else:
-    filtered_data['Latitude'] = None
-    filtered_data['Longitude'] = None
+# Indicador 2: Valor Total das Multas (soma dos valores correspondentes no índice 14)
+# Garantir que o índice 14 esteja em formato numérico
+data[14] = pd.to_numeric(
+    data[14]
+    .astype(str)
+    .str.replace(r'[^\d,.-]', '', regex=True)
+    .str.replace(',', '.'),
+    errors='coerce'
+)
 
-# Determinar localização inicial do mapa
-valid_coordinates = filtered_data.dropna(subset=['Latitude', 'Longitude'])
-if not valid_coordinates.empty:
-    map_center = [
-        valid_coordinates['Latitude'].mean(),
-        valid_coordinates['Longitude'].mean()
-    ]
-else:
-    map_center = [-23.5505, -46.6333]  # São Paulo, Brasil
+# Filtrar registros únicos com base no índice 5
+unique_fines = data.drop_duplicates(subset=[5])
 
-# Indicadores principais
-st.markdown("<h2 style='text-align: center; color: #0066B4;'>Indicadores Principais</h2>", unsafe_allow_html=True)
+# Somar os valores no índice 14 dos registros únicos
+valor_total_multas = unique_fines[14].sum()
 
-col1, col2, col3, col4, col5 = st.columns(5)
-
-# Total de multas
-total_multas = data[5].nunique()
-col1.metric("Total de Multas", total_multas)
-
-# Valor total das multas
-valor_total_multas = data.drop_duplicates(subset=[5])[14].sum()
-col2.metric("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}")
-
-# Multas no mês atual
+# Indicador 3: Multas no Mês Atual
 mes_atual = datetime.now().month
-ano_atual = datetime.now().year
-multas_mes_atual = data[(data[9].dt.month == mes_atual) & (data[9].dt.year == ano_atual)][5].nunique()
-col3.metric("Multas no Mês Atual", multas_mes_atual)
+multas_mes_atual = filtered_data[9].dt.month.value_counts().get(mes_atual, 0)
 
-# Valor total das multas no mês atual
-valor_multas_mes_atual = data[(data[9].dt.month == mes_atual) & (data[9].dt.year == ano_atual)][14].sum()
-col4.metric("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}")
+# Indicador 4: Valor das Multas no Mês Atual
+valor_multas_mes_atual = filtered_data[filtered_data[9].dt.month == mes_atual][14].sum()
 
-# Data da consulta
-data_consulta = data.iloc[1, 0] if not data.empty else "N/A"
-col5.metric("Data da Consulta", data_consulta)
+# Indicador 5: Data da Consulta (primeiro registro do índice 0)
+data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
+
+# Estrutura HTML para exibição dos indicadores
+indicadores_html = f"""
+<div class="indicadores-container">
+    <div class="indicador">
+        <span>Total de Multas</span>
+        <p>{total_multas}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor Total das Multas</span>
+        <p>R$ {valor_total_multas:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Multas no Mês Atual</span>
+        <p>{multas_mes_atual}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor das Multas no Mês Atual</span>
+        <p>R$ {valor_multas_mes_atual:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Data da Consulta</span>
+        <p>{data_consulta}</p>
+    </div>
+</div>
+"""
+st.markdown(indicadores_html, unsafe_allow_html=True)
+
 
 # Map Section
 st.markdown('<h2 style="text-align: center; color: #0066B4;">Distribuição Geográfica</h2>', unsafe_allow_html=True)
-m = Map(location=map_center, zoom_start=5, tiles="CartoDB dark_matter")
 
+# Configurar local inicial do mapa com base nas coordenadas médias das multas
+if not filtered_data.empty and 'Latitude' in filtered_data.columns and 'Longitude' in filtered_data.columns:
+    avg_lat = filtered_data['Latitude'].mean()
+    avg_lon = filtered_data['Longitude'].mean()
+else:
+    avg_lat, avg_lon = -23.5505, -46.6333  # Coordenadas padrão (São Paulo)
+
+m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
+
+# Ícone personalizado
 icon_url = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-icon_size = (30, 30)  # Tamanho ajustado do ícone
+icon_size = (30, 30)
 
+# Adicionar marcadores ao mapa
 for _, row in filtered_data.iterrows():
     if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
         popup_content = f"""
-        <b>Local:</b> {row['Local da Infração']}<br>
-        <b>Valor:</b> R$ {row['Valor a ser pago R$']:.2f}<br>
-        <b>Data da Infração:</b> {row['Data da Infração'].strftime('%d/%m/%Y') if pd.notnull(row['Data da Infração']) else "Não disponível"}
+        <b>Local:</b> {row[12]}<br>
+        <b>Valor:</b> R$ {row[14]:,.2f}<br>
+        <b>Data da Infração:</b> {row[9].strftime('%d/%m/%Y') if pd.notnull(row[9]) else "Não disponível"}
         """
         marker_icon = CustomIcon(icon_url, icon_size=icon_size)
         Marker(
@@ -191,28 +308,69 @@ for _, row in filtered_data.iterrows():
             icon=marker_icon
         ).add_to(m)
 
-st_folium(m, width="100%", height=600)
+# Detalhes das multas para localização selecionada
+map_click_data = st_folium(m, width="100%", height=600)  # Captura os cliques no mapa
+
+if map_click_data and map_click_data.get("last_object_clicked"):
+    lat = map_click_data["last_object_clicked"].get("lat")
+    lng = map_click_data["last_object_clicked"].get("lng")
+    
+    # Filtrar multas pela localização clicada
+    selected_fines = filtered_data[
+        (filtered_data['Latitude'] == lat) & 
+        (filtered_data['Longitude'] == lng)
+    ]
+
+    if not selected_fines.empty:
+        st.markdown(
+            "<h2 style='text-align: center; color: #0066B4;'>Detalhes das Multas para a Localização Selecionada</h2>",
+            unsafe_allow_html=True
+        )
+        # Exibir detalhes das multas no DataFrame
+        st.dataframe(
+            selected_fines[[1, 12, 14, 9, 11]].rename(
+                columns={
+                    1: 'Placa Relacionada',
+                    12: 'Local da Infração',
+                    14: 'Valor a ser pago R$',
+                    9: 'Data da Infração',
+                    11: 'Descrição'
+                }
+            ).reset_index(drop=True),
+            use_container_width=True,
+            hide_index=True
+        )
+    else:
+        st.info("Nenhuma multa encontrada para a localização selecionada.")
 
 # Graphs Section
 st.markdown("<h2 style='text-align: center; color: #0066B4;'>Veículos com Mais Multas</h2>", unsafe_allow_html=True)
 vehicle_fines_chart = create_vehicle_fines_chart(filtered_data)
 st.plotly_chart(vehicle_fines_chart, use_container_width=True)
 
-# Preparar dados para "Infrações Mais Comuns"
-if 'Enquadramento da Infração' in filtered_data.columns:
-    common_infractions_data = filtered_data.groupby(['Enquadramento da Infração', 'Descrição']).size().reset_index(name='Ocorrências')
-    common_infractions_data = common_infractions_data.sort_values(by='Ocorrências', ascending=False)
-
+# Infrações Mais Comuns
+required_columns = [8, 11, 5]
+missing_columns = [col for col in required_columns if col not in filtered_data.columns]
+if not missing_columns:
     st.markdown("<h2 style='text-align: center; color: #0066B4;'>Infrações Mais Comuns</h2>", unsafe_allow_html=True)
-    common_infractions_chart = create_common_infractions_chart(common_infractions_data)
+    filtered_infractions_data = filtered_data[required_columns]
+    common_infractions_chart = create_common_infractions_chart(filtered_infractions_data)
     st.plotly_chart(common_infractions_chart, use_container_width=True)
 else:
-    st.error("Coluna 'Enquadramento da Infração' não encontrada nos dados carregados.")
+    st.error(f"As colunas com os índices {missing_columns} não foram encontradas nos dados.")
 
-st.markdown("<h2 style='text-align: center; color: #0066B4;'>Distribuição por Dias da Semana</h2>", unsafe_allow_html=True)
-weekday_infractions_chart = create_weekday_infractions_chart(filtered_data)
-st.plotly_chart(weekday_infractions_chart, use_container_width=True)
+# Distribuição por Dias da Semana
+if 9 in filtered_data.columns:
+    st.markdown("<h2 style='text-align: center; color: #0066B4;'>Distribuição por Dias da Semana</h2>", unsafe_allow_html=True)
+    weekday_infractions_chart = create_weekday_infractions_chart(filtered_data)
+    st.plotly_chart(weekday_infractions_chart, use_container_width=True)
+else:
+    st.error("A coluna com índice 9 (Data da Infração) não foi encontrada nos dados.")
 
-st.markdown("<h2 style='text-align: center; color: #0066B4;'>Multas Acumuladas</h2>", unsafe_allow_html=True)
-fines_accumulated_chart = create_fines_accumulated_chart(filtered_data)
-st.plotly_chart(fines_accumulated_chart, use_container_width=True)
+# Multas Acumuladas
+if 9 in filtered_data.columns:
+    st.markdown("<h2 style='text-align: center; color: #0066B4;'>Multas Acumuladas</h2>", unsafe_allow_html=True)
+    fines_accumulated_chart = create_fines_accumulated_chart(filtered_data)
+    st.plotly_chart(fines_accumulated_chart, use_container_width=True)
+else:
+    st.error("A coluna com índice 9 (Data da Infração) não foi encontrada nos dados.")

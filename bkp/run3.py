@@ -16,20 +16,6 @@ from folium import Map, Marker, Popup
 from folium.features import CustomIcon
 from streamlit_folium import st_folium
 
-CACHE_FILE = "coordinates_cache.json"
-
-def load_cache():
-    """Carregar o cache de coordenadas de um arquivo JSON."""
-    try:
-        with open(CACHE_FILE, "r") as file:
-            return json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-def save_cache(cache):
-    """Salvar o cache de coordenadas em um arquivo JSON."""
-    with open(CACHE_FILE, "w") as file:
-        json.dump(cache, file, indent=4)
 
 def download_file_from_drive(file_id, credentials_info):
     """Download a file from Google Drive using its file ID."""
@@ -74,12 +60,12 @@ def ensure_coordinates(data, cache, api_key):
             cache[location] = get_cached_coordinates(location, api_key, cache)
         return cache[location]
 
-    # Aplicar coordenadas para cada local no índice 12
-    data[['Latitude', 'Longitude']] = data[12].apply(
+    data.loc[:, ['Latitude', 'Longitude']] = data[12].apply(
         lambda loc: pd.Series(get_coordinates_with_cache(loc))
     )
-    save_cache(cache)  # Salvar coordenadas atualizadas no cache
+    save_cache(cache)
     return data
+
 
 # Load secrets with error handling
 try:
@@ -99,7 +85,6 @@ st.markdown(
     <style>
         .titulo-dashboard-container {
             display: flex;
-            flex-direction: column; /* Alinha os itens na vertical */
             justify-content: center;
             align-items: center;
             text-align: center;
@@ -115,11 +100,6 @@ st.markdown(
             color: #F37529;
             text-transform: uppercase;
             margin: 0;
-        }
-        .subtitulo-dashboard {
-            font-size: 18px; /* Tamanho da fonte do subtítulo */
-            color: #555555; /* Cor do subtítulo */
-            margin: 10px 0 0 0; /* Espaçamento acima do subtítulo */
         }
         .logo-container {
             display: flex;
@@ -183,7 +163,7 @@ st.markdown(
     f"""
     <div class="titulo-dashboard-container">
         <h1 class="titulo-dashboard">Torre de Controle Itracker - Dashboard de Multas</h1>
-        <p class="subtitulo-dashboard">Monitorando em tempo real as consultas de multas no DETRAN-RJ</p>
+        <span>Monitorando em tempo real as consultas de multas no DETRAN-RJ</span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -276,72 +256,22 @@ indicadores_html = f"""
 """
 st.markdown(indicadores_html, unsafe_allow_html=True)
 
-
 # Map Section
 st.markdown('<h2 style="text-align: center; color: #0066B4;">Distribuição Geográfica</h2>', unsafe_allow_html=True)
-
-# Configurar local inicial do mapa com base nas coordenadas médias das multas
-if not filtered_data.empty and 'Latitude' in filtered_data.columns and 'Longitude' in filtered_data.columns:
-    avg_lat = filtered_data['Latitude'].mean()
-    avg_lon = filtered_data['Longitude'].mean()
-else:
-    avg_lat, avg_lon = -23.5505, -46.6333  # Coordenadas padrão (São Paulo)
-
-m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
-
-# Ícone personalizado
+m = Map(location=[-23.5505, -46.6333], zoom_start=5, tiles="CartoDB dark_matter")
 icon_url = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
 icon_size = (30, 30)
-
-# Adicionar marcadores ao mapa
 for _, row in filtered_data.iterrows():
     if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
         popup_content = f"""
         <b>Local:</b> {row[12]}<br>
-        <b>Valor:</b> R$ {row[14]:,.2f}<br>
+        <b>Valor:</b> R$ {row[14]:.2f}<br>
         <b>Data da Infração:</b> {row[9].strftime('%d/%m/%Y') if pd.notnull(row[9]) else "Não disponível"}
         """
         marker_icon = CustomIcon(icon_url, icon_size=icon_size)
-        Marker(
-            location=[row['Latitude'], row['Longitude']],
-            popup=Popup(popup_content, max_width=300),
-            icon=marker_icon
-        ).add_to(m)
+        Marker(location=[row['Latitude'], row['Longitude']], popup=Popup(popup_content, max_width=300), icon=marker_icon).add_to(m)
 
-# Detalhes das multas para localização selecionada
-map_click_data = st_folium(m, width="100%", height=600)  # Captura os cliques no mapa
-
-if map_click_data and map_click_data.get("last_object_clicked"):
-    lat = map_click_data["last_object_clicked"].get("lat")
-    lng = map_click_data["last_object_clicked"].get("lng")
-    
-    # Filtrar multas pela localização clicada
-    selected_fines = filtered_data[
-        (filtered_data['Latitude'] == lat) & 
-        (filtered_data['Longitude'] == lng)
-    ]
-
-    if not selected_fines.empty:
-        st.markdown(
-            "<h2 style='text-align: center; color: #0066B4;'>Detalhes das Multas para a Localização Selecionada</h2>",
-            unsafe_allow_html=True
-        )
-        # Exibir detalhes das multas no DataFrame
-        st.dataframe(
-            selected_fines[[1, 12, 14, 9, 11]].rename(
-                columns={
-                    1: 'Placa Relacionada',
-                    12: 'Local da Infração',
-                    14: 'Valor a ser pago R$',
-                    9: 'Data da Infração',
-                    11: 'Descrição'
-                }
-            ).reset_index(drop=True),
-            use_container_width=True,
-            hide_index=True
-        )
-    else:
-        st.info("Nenhuma multa encontrada para a localização selecionada.")
+st_folium(m, width="100%", height=600)
 
 # Graphs Section
 st.markdown("<h2 style='text-align: center; color: #0066B4;'>Veículos com Mais Multas</h2>", unsafe_allow_html=True)
