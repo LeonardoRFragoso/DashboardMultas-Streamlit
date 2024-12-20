@@ -525,14 +525,14 @@ if 9 in filtered_data.columns:
         weekday_summary_df,
         x='Dia da Semana',
         y='Quantidade de Multas',
-        title='Distribuição por Dia da Semana',
+        title='',
         labels={'Quantidade de Multas': 'Quantidade de Multas'},
         text='Quantidade de Multas',
     )
 
     weekday_chart.update_traces(textposition='outside')
     weekday_chart.update_layout(
-        xaxis_title="Dia da Semana",
+        xaxis_title="",
         yaxis_title="Quantidade de Multas",
         template="plotly_white",
     )
