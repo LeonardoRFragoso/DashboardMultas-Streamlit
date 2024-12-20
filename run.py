@@ -447,7 +447,7 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # Infrações Mais Comuns
-if 8 in filtered_data.columns and 5 in filtered_data.columns and 11 in filtered_data.columns:
+if all(col in filtered_data.columns for col in [8, 11, 5]):  # Verifique se as colunas existem
     st.markdown(
         """
         <h2 style="
@@ -466,14 +466,14 @@ if 8 in filtered_data.columns and 5 in filtered_data.columns and 11 in filtered_
     )
 
     # Filtrar registros únicos com base no identificador do Auto de Infração
-    unique_infractions = filtered_data.drop_duplicates(subset=[5])  # Substitua 5 pelo índice correto do Auto de Infração
+    unique_infractions = filtered_data.drop_duplicates(subset=[5])
 
     # Agrupar as infrações por código e contar ocorrências
     infraction_summary = (
-        unique_infractions.groupby(8)  # Substitua 8 pelo índice da coluna de código da infração
+        unique_infractions.groupby(8)  # Índice da coluna de código da infração
         .agg(
-            Quantidade=('8', 'count'),  # Contar ocorrências únicas
-            Descrição=('11', 'first')  # Substitua 11 pela coluna de descrição da infração
+            Quantidade=('5', 'count'),  # Contar ocorrências únicas
+            Descrição=('11', 'first')  # Primeira descrição associada à infração
         )
         .reset_index()
         .sort_values(by='Quantidade', ascending=False)
@@ -498,7 +498,8 @@ if 8 in filtered_data.columns and 5 in filtered_data.columns and 11 in filtered_
 
     st.plotly_chart(fig, use_container_width=True)
 else:
-    st.error("As colunas necessárias para o gráfico de infrações mais comuns não foram encontradas.")
+    missing_columns = [col for col in [8, 11, 5] if col not in filtered_data.columns]
+    st.error(f"As colunas necessárias para o gráfico de infrações mais comuns estão ausentes: {missing_columns}")
 
 # Distribuição por Dias da Semana
 if 9 in filtered_data.columns:
