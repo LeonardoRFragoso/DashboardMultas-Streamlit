@@ -508,7 +508,10 @@ if 9 in filtered_data.columns:
         .dt.day_name()  # Obter o nome dos dias em inglês
         .map(day_translation)  # Traduzir os nomes para português
         .value_counts()
-        .sort_index()  # Ordenar para manter a sequência dos dias
+        .reindex(
+            ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"],
+            fill_value=0  # Garantir que todos os dias apareçam, mesmo sem registros
+        )
     )
 
     # Converter para DataFrame para uso no gráfico
@@ -516,6 +519,8 @@ if 9 in filtered_data.columns:
     weekday_summary_df.columns = ['Dia da Semana', 'Quantidade de Multas']
 
     # Criar o gráfico
+    import plotly.express as px
+
     weekday_chart = px.bar(
         weekday_summary_df,
         x='Dia da Semana',
