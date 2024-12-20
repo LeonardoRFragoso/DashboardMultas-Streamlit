@@ -488,8 +488,41 @@ if 9 in filtered_data.columns:
         unsafe_allow_html=True
     )
 
-    weekday_infractions_chart = create_weekday_infractions_chart(filtered_data)
-    st.plotly_chart(weekday_infractions_chart, use_container_width=True)
+    # Filtrar registros únicos com base no índice do Auto de Infração (5)
+    unique_fines_weekday = filtered_data.drop_duplicates(subset=[5])
+
+    # Agrupar por dia da semana
+    weekday_summary = (
+        unique_fines_weekday[9]
+        .dt.day_name(locale='pt_BR')  # Nome dos dias da semana em português
+        .value_counts()
+        .sort_index()  # Ordenar para manter a sequência dos dias
+    )
+
+    # Converter para DataFrame para uso no gráfico
+    weekday_summary_df = weekday_summary.reset_index()
+    weekday_summary_df.columns = ['Dia da Semana', 'Quantidade de Multas']
+
+    # Criar o gráfico
+    import plotly.express as px
+
+    weekday_chart = px.bar(
+        weekday_summary_df,
+        x='Dia da Semana',
+        y='Quantidade de Multas',
+        title='Distribuição por Dia da Semana',
+        labels={'Quantidade de Multas': 'Quantidade de Multas'},
+        text='Quantidade de Multas',
+    )
+
+    weekday_chart.update_traces(textposition='outside')
+    weekday_chart.update_layout(
+        xaxis_title="Dia da Semana",
+        yaxis_title="Quantidade de Multas",
+        template="plotly_white",
+    )
+
+    st.plotly_chart(weekday_chart, use_container_width=True)
 else:
     st.error("A coluna com índice 9 (Data da Infração) não foi encontrada nos dados.")
 
