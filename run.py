@@ -218,7 +218,7 @@ cache = load_cache()  # Carregar coordenadas do cache
 filtered_data = ensure_coordinates(filtered_data, cache, api_key)
 
 # Indicadores Principais - Atualizado
-st.markdown("<h2 class='titulo-secao'>Indicadores Principais</h2>", unsafe_allow_html=True)
+st.markdown('<h2 style="text-align: center; color: #0066B4;">Indicadores Principais</h2>', unsafe_allow_html=True)
 
 # Indicador 1: Total de Multas (Auto de Infração únicos)
 total_multas = data[5].nunique()  # Contar registros únicos no índice 5
@@ -344,9 +344,49 @@ if map_click_data and map_click_data.get("last_object_clicked"):
         st.info("Nenhuma multa encontrada para a localização selecionada.")
 
 # Graphs Section
+# Gráfico de Veículos com Mais Multas - Ajustado para Multas Únicas
 st.markdown("<h2 style='text-align: center; color: #0066B4;'>Veículos com Mais Multas</h2>", unsafe_allow_html=True)
-vehicle_fines_chart = create_vehicle_fines_chart(filtered_data)
-st.plotly_chart(vehicle_fines_chart, use_container_width=True)
+
+# Filtrar apenas multas únicas com base no índice 5 (Auto de Infração)
+unique_fines = filtered_data.drop_duplicates(subset=[5])
+
+# Agrupar multas por placa (índice 1) e calcular o total de multas e o valor total
+vehicle_summary = (
+    unique_fines.groupby(1)
+    .agg(
+        Numero_de_Multas=(5, 'count'),  # Contar multas únicas
+        Valor_Total=(14, 'sum')        # Somar o valor das multas
+    )
+    .reset_index()
+    .rename(columns={1: 'Placa do Veículo'})
+)
+
+# Ordenar os dados pelo valor total em ordem decrescente
+vehicle_summary = vehicle_summary.sort_values(by='Valor_Total', ascending=False)
+
+# Criar o gráfico de barras
+fig = px.bar(
+    vehicle_summary.head(10),  # Mostrar as 10 principais placas
+    x='Placa do Veículo',
+    y='Valor_Total',
+    color='Numero_de_Multas',
+    text='Numero_de_Multas',
+    title='Veículos com Mais Multas',
+    labels={'Valor_Total': 'Total das Multas (R$)', 'Numero_de_Multas': 'Número de Multas'}
+)
+
+# Atualizar layout para personalização
+fig.update_traces(texttemplate='%{text} multas<br>R$ %{y:,.2f}', textposition='outside')
+fig.update_layout(
+    xaxis_title="Placa do Veículo",
+    yaxis_title="Total das Multas (R$)",
+    legend_title="Número de Multas",
+    template="plotly_white"
+)
+
+# Mostrar o gráfico no Streamlit
+st.plotly_chart(fig, use_container_width=True)
+
 
 # Infrações Mais Comuns
 required_columns = [8, 11, 5]
