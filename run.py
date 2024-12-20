@@ -426,7 +426,7 @@ fig = px.bar(
     y='Valor_Total',
     color='Numero_de_Multas',
     text='Numero_de_Multas',
-    title='Veículos com Mais Multas',
+    title='',
     labels={'Valor_Total': 'Total das Multas (R$)', 'Numero_de_Multas': 'Número de Multas'}
 )
 
