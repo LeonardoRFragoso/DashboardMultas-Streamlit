@@ -491,10 +491,22 @@ if 9 in filtered_data.columns:
     # Filtrar registros únicos com base no índice do Auto de Infração (5)
     unique_fines_weekday = filtered_data.drop_duplicates(subset=[5])
 
+    # Mapear os nomes dos dias da semana para português manualmente
+    day_translation = {
+        "Monday": "Segunda-feira",
+        "Tuesday": "Terça-feira",
+        "Wednesday": "Quarta-feira",
+        "Thursday": "Quinta-feira",
+        "Friday": "Sexta-feira",
+        "Saturday": "Sábado",
+        "Sunday": "Domingo",
+    }
+
     # Agrupar por dia da semana
     weekday_summary = (
         unique_fines_weekday[9]
-        .dt.day_name(locale='pt_BR')  # Nome dos dias da semana em português
+        .dt.day_name()  # Obter o nome dos dias em inglês
+        .map(day_translation)  # Traduzir os nomes para português
         .value_counts()
         .sort_index()  # Ordenar para manter a sequência dos dias
     )
@@ -504,8 +516,6 @@ if 9 in filtered_data.columns:
     weekday_summary_df.columns = ['Dia da Semana', 'Quantidade de Multas']
 
     # Criar o gráfico
-    import plotly.express as px
-
     weekday_chart = px.bar(
         weekday_summary_df,
         x='Dia da Semana',
