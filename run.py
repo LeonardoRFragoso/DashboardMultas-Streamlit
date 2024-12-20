@@ -617,7 +617,7 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
         # Ajustar layout do gráfico
         accumulated_chart.update_traces(marker=dict(size=8))
         accumulated_chart.update_layout(
-            xaxis_title="Período",
+            xaxis_title="",
             yaxis_title="Valores",
             template="plotly_white",
             legend_title="Métricas"
