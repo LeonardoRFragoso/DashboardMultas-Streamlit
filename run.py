@@ -256,19 +256,17 @@ is_default_filter = (
     data_fim == datetime.now().date()
 )
 
-# Exibir totais dinâmicos (sem filtro) ou filtrados
 if is_default_filter:
-    # Exibir total geral (sem filtros aplicados)
-    total_multas = total_multas_geral
-    valor_total_multas = valor_total_geral
-    st.write("Sem filtro aplicado - Exibindo total geral dinâmico")
+    # Exibir os valores padrão ao recarregar a página
+    total_multas = TOTAL_MULTAS_PADRAO
+    valor_total_multas = VALOR_TOTAL_PADRAO
+    st.write("Sem filtro aplicado - Exibindo total padrão")
 else:
-    # Aplicar o filtro de data e recalcular
+    # Aplicar o filtro e recalcular os indicadores
     filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
     total_multas = filtered_unique_fines['Auto de Infração'].nunique()
     valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
     st.write("Filtro aplicado - Exibindo dados filtrados")
-
 
 
 # Depuração - Mostrar valores finais
