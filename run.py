@@ -354,7 +354,6 @@ else:
 
 m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
 
-# Adicionar marcadores com base em todas as multas (não filtradas)
 for _, row in map_data.iterrows():
     if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
         popup_content = f"""
@@ -367,16 +366,13 @@ for _, row in map_data.iterrows():
             popup=Popup(popup_content, max_width=300)
         ).add_to(m)
 
-st_folium(m, width="100%", height=600)
-
-# Inicializar map_click_data para evitar erro de NameError
-map_click_data = st.session_state.get("map_click_data", None)
+# Garante que map_click_data seja definido corretamente
+map_click_data = st_folium(m, width="100%", height=600)
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
     lng = map_click_data["last_object_clicked"].get("lng")
     
-    # Filtrar multas pela localização clicada
     selected_fines = filtered_data[
         (filtered_data['Latitude'] == lat) & 
         (filtered_data['Longitude'] == lng)
@@ -400,7 +396,6 @@ if map_click_data and map_click_data.get("last_object_clicked"):
             unsafe_allow_html=True
         )
 
-        # Exibir detalhes das multas no DataFrame
         st.dataframe(
             selected_fines[[1, 12, 14, 9, 11]].rename(
                 columns={
@@ -416,6 +411,7 @@ if map_click_data and map_click_data.get("last_object_clicked"):
         )
     else:
         st.info("Nenhuma multa encontrada para a localização selecionada.")
+
 
 # Graphs Section
 # Gráfico de Veículos com Mais Multas - Ajustado para Multas Únicas
