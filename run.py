@@ -18,7 +18,6 @@ from folium.features import CustomIcon
 from streamlit_folium import st_folium
 from filters_module import apply_filters  # Importar o módulo de filtros
 
-
 CACHE_FILE = "coordinates_cache.json"
 
 def load_cache():
@@ -205,10 +204,10 @@ if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
 
-# Criação de cópia dos dados para o mapa antes da filtragem
+# Adicione esta linha aqui - cria uma cópia dos dados originais para o mapa
 map_data = data.copy()
 
-# Aplicar os filtros aos dados
+# Aplique filtros apenas para gráficos e tabelas
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Ensure coordinates and cache
