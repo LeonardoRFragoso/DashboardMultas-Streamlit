@@ -16,11 +16,11 @@ import plotly.express as px
 from folium import Map, Marker, Popup
 from folium.features import CustomIcon
 from streamlit_folium import st_folium
+from filters_module import apply_filters  # Importar o módulo de filtros
 
 CACHE_FILE = "coordinates_cache.json"
 
 def load_cache():
-    """Carregar o cache de coordenadas de um arquivo JSON."""
     try:
         with open(CACHE_FILE, "r") as file:
             return json.load(file)
@@ -28,12 +28,10 @@ def load_cache():
         return {}
 
 def save_cache(cache):
-    """Salvar o cache de coordenadas em um arquivo JSON."""
     with open(CACHE_FILE, "w") as file:
         json.dump(cache, file, indent=4)
 
 def download_file_from_drive(file_id, credentials_info):
-    """Download a file from Google Drive using its file ID."""
     credentials = Credentials.from_service_account_info(credentials_info)
     drive_service = build('drive', 'v3', credentials=credentials)
     request = drive_service.files().get_media(fileId=file_id)
@@ -47,11 +45,9 @@ def download_file_from_drive(file_id, credentials_info):
     file_buffer.seek(0)
     return file_buffer
 
-
 def preprocess_data(file_buffer):
-    """Preprocess the data from the file buffer."""
     data = pd.read_excel(file_buffer)
-    data.columns = range(len(data.columns))  # Reindex columns
+    data.columns = range(len(data.columns))
 
     for col_index in [13, 14]:
         data[col_index] = (
@@ -61,35 +57,31 @@ def preprocess_data(file_buffer):
             .str.replace(',', '.', regex=False)
             .astype(float)
         )
-
-    # Garantir que índice 9 seja tratado como datetime
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
-
     return data
 
-
 def ensure_coordinates(data, cache, api_key):
-    """Ensure Latitude and Longitude columns are populated once."""
-    # Verifica se as colunas já existem
-    if 'Latitude' in data.columns and 'Longitude' in data.columns:
-        return data  # Se as colunas já existem, retorna os dados diretamente
-
     def get_coordinates_with_cache(location):
         if location not in cache:
-            coords = get_cached_coordinates(location, api_key, cache)
-            if coords is None or len(coords) != 2:
-                return pd.Series([None, None])
-            cache[location] = coords
-        return pd.Series(cache[location])
+            try:
+                cache[location] = get_cached_coordinates(location, api_key, cache)
+            except Exception as e:
+                st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
+                return [np.nan, np.nan]  # Retorna NaN se falhar
+        return cache[location]
 
-    # Aplica coordenadas apenas uma vez
-    data[['Latitude', 'Longitude']] = data[12].apply(
-        lambda loc: get_coordinates_with_cache(loc)
-    )
+    # Garantir que o resultado tenha sempre 2 valores
+    coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
+
+    # Validar tamanho para evitar erro de atribuição
+    if coordinates.shape[1] == 2:
+        data[['Latitude', 'Longitude']] = coordinates
+    else:
+        st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
+
     save_cache(cache)
     return data
 
-# Load secrets with error handling
 try:
     drive_credentials = json.loads(st.secrets["general"]["CREDENTIALS"])
     drive_file_id = st.secrets["file_data"]["ultima_planilha_id"]
@@ -98,16 +90,42 @@ except KeyError as e:
     st.error(f"Erro ao carregar os segredos: {e}")
     st.stop()
 
-# Streamlit setup
 st.set_page_config(page_title="Multas Dashboard", layout="wide")
 
-# CSS Styling
+st.markdown(
+    """
+    <style>
+        .filter-expander {
+            border: 2px solid #F37529;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+        [data-testid="stExpander"] > summary {
+            font-weight: 600;
+            font-size: 16px;
+            color: #F37529;
+            padding: 12px;
+            cursor: pointer;
+        }
+        .filtro-alerta {
+            text-align: center;
+            color: #F37529;
+            font-size: 15px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.markdown(
     """
     <style>
         .titulo-dashboard-container {
             display: flex;
-            flex-direction: column; /* Alinha os itens na vertical */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
@@ -125,9 +143,9 @@ st.markdown(
             margin: 0;
         }
         .subtitulo-dashboard {
-            font-size: 18px; /* Tamanho da fonte do subtítulo */
-            color: #555555; /* Cor do subtítulo */
-            margin: 10px 0 0 0; /* Espaçamento acima do subtítulo */
+            font-size: 18px;
+            color: #555555;
+            margin: 10px 0 0 0;
         }
         .logo-container {
             display: flex;
@@ -176,19 +194,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Logo
 st.markdown(
     f"""
     <div class="logo-container">
         <img src="{st.secrets['image']['logo_url']}" alt="Logo da Empresa">
     </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Logo and Header
-st.markdown(
-    f"""
     <div class="titulo-dashboard-container">
         <h1 class="titulo-dashboard">Torre de Controle Itracker - Dashboard de Multas</h1>
         <p class="subtitulo-dashboard">Monitorando em tempo real as consultas de multas no DETRAN-RJ</p>
@@ -197,29 +207,14 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Load and preprocess data
-st.info("Carregando dados do Google Drive...")
 file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
 data = preprocess_data(file_buffer)
 
 if data.empty:
-    st.error("Os dados carregados estão vazios. Verifique o arquivo de origem.")
+    st.error("Os dados carregados estão vazios.")
     st.stop()
 
-# Ensure required columns
-required_columns = [1, 5, 12, 14, 9]
-missing_columns = [col for col in required_columns if col not in data.columns]
-if missing_columns:
-    st.error(f"As seguintes colunas estão ausentes: {missing_columns}")
-    st.stop()
-
-# Filters
-data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
-data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
-filtered_data = data[
-    (data[9] >= pd.Timestamp(data_inicio)) & 
-    (data[9] <= pd.Timestamp(data_fim))
-]
+filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Ensure coordinates and cache
 cache = load_cache()  # Carregar coordenadas do cache

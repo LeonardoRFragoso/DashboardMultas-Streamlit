@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from graph_geo_distribution import create_geo_distribution_map
-from geo_utils import get_cached_coordinates, load_cache, save_cache
+from geo_utils import get_cached_coordinates, initialize_cache
 from graph_vehicles_fines import create_vehicle_fines_chart
 from graph_common_infractions import create_common_infractions_chart
 from graph_weekday_infractions import create_weekday_infractions_chart
@@ -18,18 +18,8 @@ from folium.features import CustomIcon
 from streamlit_folium import st_folium
 from filters_module import apply_filters  # Importar o módulo de filtros
 
-CACHE_FILE = "coordinates_cache.json"
-
-def load_cache():
-    try:
-        with open(CACHE_FILE, "r") as file:
-            return json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-def save_cache(cache):
-    with open(CACHE_FILE, "w") as file:
-        json.dump(cache, file, indent=4)
+# Inicializar cache
+initialize_cache()
 
 def download_file_from_drive(file_id, credentials_info):
     credentials = Credentials.from_service_account_info(credentials_info)
@@ -60,26 +50,21 @@ def preprocess_data(file_buffer):
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
     return data
 
-def ensure_coordinates(data, cache, api_key):
+def ensure_coordinates(data, api_key):
     def get_coordinates_with_cache(location):
-        if location not in cache:
-            try:
-                cache[location] = get_cached_coordinates(location, api_key, cache)
-            except Exception as e:
-                st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
-                return [np.nan, np.nan]  # Retorna NaN se falhar
-        return cache[location]
+        lat, lng = get_cached_coordinates(location, api_key)
+        if lat is None or lng is None:
+            return [float('nan'), float('nan')]
+        return [lat, lng]
 
-    # Garantir que o resultado tenha sempre 2 valores
+    # Aplica as coordenadas usando a função de cache
     coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
 
-    # Validar tamanho para evitar erro de atribuição
     if coordinates.shape[1] == 2:
         data[['Latitude', 'Longitude']] = coordinates
     else:
         st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
 
-    save_cache(cache)
     return data
 
 try:
@@ -92,6 +77,7 @@ except KeyError as e:
 
 st.set_page_config(page_title="Multas Dashboard", layout="wide")
 
+# UI e estilo
 st.markdown(
     """
     <style>
@@ -121,80 +107,6 @@ st.markdown(
 )
 
 st.markdown(
-    """
-    <style>
-        .titulo-dashboard-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            margin: 0 auto;
-            padding: 25px 20px;
-            background: linear-gradient(to right, #F37529, rgba(255, 255, 255, 0.8));
-            border-radius: 15px;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-        }
-        .titulo-dashboard {
-            font-size: 50px;
-            font-weight: bold;
-            color: #F37529;
-            text-transform: uppercase;
-            margin: 0;
-        }
-        .subtitulo-dashboard {
-            font-size: 18px;
-            color: #555555;
-            margin: 10px 0 0 0;
-        }
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .logo-container img {
-            max-width: 200px;
-            height: auto;
-        }
-        .indicadores-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            margin-top: 30px;
-        }
-        .indicador {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            background-color: #FFFFFF;
-            border: 4px solid #0066B4;
-            border-radius: 15px;
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
-            width: 260px;
-            height: 160px;
-            padding: 10px;
-        }
-        .indicador span {
-            font-size: 18px;
-            color: #0066B4;
-        }
-        .indicador p {
-            font-size: 38px;
-            color: #0066B4;
-            margin: 0;
-            font-weight: bold;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-st.markdown(
     f"""
     <div class="logo-container">
         <img src="{st.secrets['image']['logo_url']}" alt="Logo da Empresa">
@@ -207,6 +119,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Carregar e processar dados
 file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
 data = preprocess_data(file_buffer)
 
@@ -214,11 +127,11 @@ if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
 
+# Aplicar filtros
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
-# Ensure coordinates and cache
-cache = load_cache()  # Carregar coordenadas do cache
-filtered_data = ensure_coordinates(filtered_data, cache, api_key)
+# Garantir coordenadas com cache
+filtered_data = ensure_coordinates(filtered_data, api_key)
 
 st.markdown(
     """
