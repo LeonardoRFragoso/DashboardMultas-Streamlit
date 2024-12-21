@@ -7,6 +7,10 @@ def render_css():
     st.markdown(
         """
         <style>
+            .indicador-container {
+                position: relative;
+                display: inline-block;
+            }
             .indicador {
                 background-color: #FFFFFF;
                 border: 4px solid #0066B4;
@@ -17,6 +21,8 @@ def render_css():
                 height: 140px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
+                position: relative;
+                z-index: 1;
             }
             .indicador:hover {
                 transform: scale(1.05);
@@ -30,6 +36,15 @@ def render_css():
                 color: #0066B4;
                 margin: 0;
                 font-weight: bold;
+            }
+            .mask-button {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                opacity: 0;
+                z-index: 2;
             }
             .selected {
                 border: 4px solid red !important;
@@ -52,7 +67,7 @@ def exibir_tabela(indicador_id, data, filtered_data):
 
     st.dataframe(tabela.reset_index(drop=True))
 
-# Função para renderizar indicadores com clique estilizado
+# Função para renderizar indicadores com máscara transparente
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
@@ -108,25 +123,29 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     # Cria 7 colunas para alinhar os indicadores lado a lado
     cols = st.columns(7)
 
-    # Renderizar indicadores como botões clicáveis usando markdown
+    # Renderizar indicadores com máscara invisível
     for i, (key, value) in enumerate(indicadores.items()):
         with cols[i]:
             selected_class = "selected" if st.session_state.clicked_indicator == key else ""
-            
-            # Renderiza o HTML de cada indicador
+
+            # Div principal com indicador visual
             st.markdown(
                 f"""
-                <div class="indicador {selected_class}" 
-                onclick="window.location.href='?clicked_indicator={key}'">
-                    <span>{key.replace('_', ' ').title()}</span>
-                    <p>{value}</p>
+                <div class="indicador-container">
+                    <div class="indicador {selected_class}">
+                        <span>{key.replace('_', ' ').title()}</span>
+                        <p>{value}</p>
+                    </div>
+                    <div class="mask-button">
+                        {st.button(f"{key.replace('_', ' ').title()}")}
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            # Captura o clique diretamente em Python
-            if st.button(f"{key.replace('_', ' ').title()}"):
+            # Captura o clique
+            if st.session_state.get(f"{key.replace('_', ' ').title()}"):
                 st.session_state.clicked_indicator = key
                 st.session_state.click_count += 1
 
