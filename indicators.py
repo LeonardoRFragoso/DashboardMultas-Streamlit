@@ -11,22 +11,19 @@ def render_css():
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 40px;
-                margin-top: 30px;
-                flex-wrap: wrap;  /* Permite quebra de linha */
+                gap: 20px;
+                flex-wrap: wrap;
             }
             .indicador {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
+                display: inline-block;  /* Força os cards a ficarem lado a lado */
+                flex: 1 1 calc(33.333% - 40px);  /* Para dividir em 3 colunas */
+                max-width: 260px;
+                height: 160px;
                 text-align: center;
                 background-color: #FFFFFF;
                 border: 4px solid #0066B4;
                 border-radius: 15px;
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
-                width: 260px;
-                height: 160px;
                 padding: 10px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
@@ -60,7 +57,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.error("A coluna com índice 5 não foi encontrada nos dados.")
         unique_fines = pd.DataFrame(columns=[5, 14, 9])
 
-    # Inicialização do filtro
     if 'filtro_aplicado' not in st.session_state:
         st.session_state['filtro_aplicado'] = False
 
@@ -83,7 +79,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 total_multas = filtered_unique_fines[5].nunique()
                 valor_total_multas = filtered_unique_fines[14].sum()
 
-    # Indicadores para o ano e mês atual
     ano_atual = datetime.now().year
     mes_atual = data_fim.month if data_fim else datetime.now().month
 
@@ -100,7 +95,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     # Exibir indicadores como cards clicáveis
     st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
     
-    # Função para criar o card clicável
+    # Criar o card clicável
     def create_card(title, value, key):
         card_html = f"""
         <div class="indicador" onclick="toggleVisibility('{key}')">
@@ -110,7 +105,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         """
         st.markdown(card_html, unsafe_allow_html=True)
 
-    # Renderizar todos os indicadores em uma linha
+    # Renderizar indicadores lado a lado
     create_card("Total de Multas", total_multas, "total_multas")
     create_card("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}", "valor_total")
     create_card("Multas no Ano Atual", multas_ano_atual, "multas_ano")
@@ -120,7 +115,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Detalhes ocultos que aparecem ao clicar
     if st.session_state.get("total_multas", False):
         with st.expander("Detalhes do Total de Multas", expanded=True):
             st.dataframe(
@@ -135,7 +129,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 use_container_width=True,
             )
 
-    # JavaScript para alternar a visibilidade
     st.markdown(
         """
         <script>
