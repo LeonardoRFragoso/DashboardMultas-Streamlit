@@ -246,6 +246,7 @@ st.write("Filtro - Data de Início:", data_inicio)
 st.write("Filtro - Data Final:", data_fim)
 st.write("Comparação de Data Atual:", datetime(datetime.now().year, 1, 1).date(), datetime.now().date())
 
+# Converter para date() para garantir comparação correta
 if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == datetime.now().date():
     # Se não houve alteração no filtro, mostrar o total geral
     total_multas = unique_fines['Auto de Infração'].nunique()
@@ -254,10 +255,16 @@ if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == dat
     st.write("Sem filtro aplicado - Exibindo total geral")
 else:
     # Aplicar filtro de data se foi alterado
-    filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
-    total_multas = filtered_unique_fines['Auto de Infração'].nunique()
-    valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
-    st.write("Filtro aplicado - Exibindo dados filtrados")
+    if filtered_data.empty:
+        st.write("Filtro aplicado, mas nenhum dado corresponde ao período selecionado.")
+        total_multas = 0
+        valor_total_multas = 0
+        filtered_unique_fines = pd.DataFrame(columns=['Auto de Infração', 'Valor a ser pago R$', 'Data da Infração'])
+    else:
+        filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
+        total_multas = filtered_unique_fines['Auto de Infração'].nunique()
+        valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
+        st.write("Filtro aplicado - Exibindo dados filtrados")
 
 # Depuração - Mostrar valores finais
 st.write("Total de Multas (após lógica):", total_multas)
@@ -297,7 +304,6 @@ indicadores_html = f"""
 </div>
 """
 st.markdown(indicadores_html, unsafe_allow_html=True)
-
 
 
 st.markdown(
