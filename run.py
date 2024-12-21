@@ -50,7 +50,6 @@ def preprocess_data(file_buffer):
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
     return data
 
-cache = {}
 
 
 def ensure_coordinates(data, api_key):

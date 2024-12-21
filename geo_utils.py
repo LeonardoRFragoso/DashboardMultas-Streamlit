@@ -1,18 +1,9 @@
 import os
 import json
 import requests
-import streamlit as st
 
 # Caminho do arquivo de cache de coordenadas
 CACHE_FILE = "coordinates_cache.json"
-
-def initialize_cache():
-    """
-    Inicializa o cache de coordenadas no st.session_state.
-    Carrega do arquivo ou cria um novo cache vazio.
-    """
-    if 'cache' not in st.session_state:
-        st.session_state.cache = load_cache()
 
 def load_cache():
     """
@@ -29,13 +20,16 @@ def load_cache():
             print(f"Erro ao carregar o cache: {e}")
     return {}
 
-def save_cache():
+def save_cache(cache):
     """
-    Salva o cache do st.session_state no arquivo JSON.
+    Salva o cache no arquivo JSON.
+
+    Parameters:
+        cache (dict): Dados a serem armazenados no cache.
     """
     try:
         with open(CACHE_FILE, 'w') as file:
-            json.dump(st.session_state.cache, file, indent=4)
+            json.dump(cache, file, indent=4)
     except IOError as e:
         print(f"Erro ao salvar o cache: {e}")
 
@@ -65,22 +59,18 @@ def get_coordinates(local, api_key):
         print(f"Erro ao buscar coordenadas: {e}")
     return None, None
 
-def get_cached_coordinates(local, api_key):
+def get_cached_coordinates(local, api_key, cache):
     """
     Obtém coordenadas do cache ou faz a busca na API e atualiza o cache.
 
     Parameters:
         local (str): O local a ser buscado.
         api_key (str): A chave de API.
+        cache (dict): O dicionário de cache de coordenadas.
 
     Returns:
         tuple: Uma tupla (latitude, longitude).
     """
-    # Inicializar cache se ainda não estiver carregado
-    initialize_cache()
-
-    cache = st.session_state.cache
-
     # Busca no cache
     if local in cache:
         lat, lng = cache[local]
@@ -91,7 +81,7 @@ def get_cached_coordinates(local, api_key):
     lat, lng = get_coordinates(local, api_key)
     if lat is not None and lng is not None:
         cache[local] = (lat, lng)
-        save_cache()  # Atualiza o cache no disco
+        save_cache(cache)  # Atualiza o cache
         return lat, lng
 
     # Retorno padrão em caso de falha
