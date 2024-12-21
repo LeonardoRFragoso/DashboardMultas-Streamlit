@@ -8,21 +8,23 @@ def render_css():
         """
         <style>
             .indicadores-container {
-                text-align: center;
-                margin: 0 auto;
-                max-width: 1200px;  /* Definir largura máxima */
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));  /* Layout responsivo */
+                gap: 30px;
+                justify-content: center;
+                margin-top: 30px;
+                max-width: 1200px;
+                margin-left: auto;
+                margin-right: auto;
             }
             .indicador {
-                display: inline-block;  /* Garantir que fiquem lado a lado */
-                margin: 10px;
                 background-color: #FFFFFF;
                 border: 4px solid #0066B4;
                 border-radius: 15px;
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
-                width: 250px;
-                height: 160px;
                 text-align: center;
                 padding: 20px;
+                height: 160px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
             }
@@ -48,14 +50,12 @@ def render_css():
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
-    # Calcular indicadores principais
     if 5 in data.columns:
         unique_fines = data.drop_duplicates(subset=[5])
     else:
         st.error("A coluna com índice 5 não foi encontrada nos dados.")
         unique_fines = pd.DataFrame(columns=[5, 14, 9])
 
-    # Lógica para filtro
     if 'filtro_aplicado' not in st.session_state:
         st.session_state['filtro_aplicado'] = False
 
@@ -92,7 +92,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Renderizar indicadores em uma linha usando inline-block
+    # Renderizar indicadores com CSS Grid
     st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
 
     def create_card(title, value):
