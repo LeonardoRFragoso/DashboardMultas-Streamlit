@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from graph_geo_distribution import create_geo_distribution_map
-from geo_utils import get_cached_coordinates, load_cache, save_cache
+from geo_utils import get_cached_coordinates, initialize_cache
 from graph_vehicles_fines import create_vehicle_fines_chart
 from graph_common_infractions import create_common_infractions_chart
 from graph_weekday_infractions import create_weekday_infractions_chart
@@ -18,18 +18,8 @@ from folium.features import CustomIcon
 from streamlit_folium import st_folium
 from filters_module import apply_filters  # Importar o módulo de filtros
 
-CACHE_FILE = "coordinates_cache.json"
-
-def load_cache():
-    try:
-        with open(CACHE_FILE, "r") as file:
-            return json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-def save_cache(cache):
-    with open(CACHE_FILE, "w") as file:
-        json.dump(cache, file, indent=4)
+# Inicializar cache
+initialize_cache()
 
 def download_file_from_drive(file_id, credentials_info):
     credentials = Credentials.from_service_account_info(credentials_info)
@@ -60,26 +50,21 @@ def preprocess_data(file_buffer):
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
     return data
 
-def ensure_coordinates(data, cache, api_key):
+def ensure_coordinates(data, api_key):
     def get_coordinates_with_cache(location):
-        if location not in cache:
-            try:
-                cache[location] = get_cached_coordinates(location, api_key, cache)
-            except Exception as e:
-                st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
-                return [np.nan, np.nan]  # Retorna NaN se falhar
-        return cache[location]
+        lat, lng = get_cached_coordinates(location, api_key)
+        if lat is None or lng is None:
+            return [float('nan'), float('nan')]
+        return [lat, lng]
 
-    # Garantir que o resultado tenha sempre 2 valores
+    # Aplica as coordenadas usando a função de cache
     coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
 
-    # Validar tamanho para evitar erro de atribuição
     if coordinates.shape[1] == 2:
         data[['Latitude', 'Longitude']] = coordinates
     else:
         st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
 
-    save_cache(cache)
     return data
 
 try:
@@ -92,15 +77,18 @@ except KeyError as e:
 
 st.set_page_config(page_title="Multas Dashboard", layout="wide")
 
+# UI e estilo original completo
 st.markdown(
     """
     <style>
+        /* Estilização para o expander (filtros) */
         .filter-expander {
             border: 2px solid #F37529;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             margin: 20px 0;
         }
+
         [data-testid="stExpander"] > summary {
             font-weight: 600;
             font-size: 16px;
@@ -108,6 +96,8 @@ st.markdown(
             padding: 12px;
             cursor: pointer;
         }
+
+        /* Alerta sutil para uso de filtros */
         .filtro-alerta {
             text-align: center;
             color: #F37529;
@@ -115,14 +105,8 @@ st.markdown(
             margin-bottom: 15px;
             font-weight: 500;
         }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
-st.markdown(
-    """
-    <style>
+        /* Container e estilo do título principal */
         .titulo-dashboard-container {
             display: flex;
             flex-direction: column;
@@ -158,6 +142,8 @@ st.markdown(
             max-width: 200px;
             height: auto;
         }
+
+        /* Estilização dos indicadores principais */
         .indicadores-container {
             display: flex;
             justify-content: center;
@@ -184,7 +170,7 @@ st.markdown(
             color: #0066B4;
         }
         .indicador p {
-            font-size: 38px;
+            font-size: 22px;
             color: #0066B4;
             margin: 0;
             font-weight: bold;
@@ -207,6 +193,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Carregar e processar dados
 file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
 data = preprocess_data(file_buffer)
 
@@ -214,11 +201,11 @@ if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
 
+# Aplicar filtros
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
-# Ensure coordinates and cache
-cache = load_cache()  # Carregar coordenadas do cache
-filtered_data = ensure_coordinates(filtered_data, cache, api_key)
+# Garantir coordenadas com cache
+filtered_data = ensure_coordinates(filtered_data, api_key)
 
 st.markdown(
     """
@@ -298,39 +285,38 @@ data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
 
 # Estrutura HTML para exibição dos indicadores
 indicadores_html = f"""
-<div class="indicadores-container" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;">
-    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+<div class="indicadores-container">
+    <div class="indicador">
         <span>Total de Multas</span>
-        <p style="font-size: 22px; margin: 5px 0;">{total_multas}</p>
+        <p>{total_multas}</p>
     </div>
-    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="indicador">
         <span>Valor Total das Multas</span>
-        <p style="font-size: 22px; margin: 5px 0;">R$ {valor_total_multas:,.2f}</p>
+        <p>R$ {valor_total_multas:,.2f}</p>
     </div>
-    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="indicador">
         <span>Multas no Ano Atual</span>
-        <p style="font-size: 22px; margin: 5px 0;">{multas_ano_atual}</p>
+        <p>{multas_ano_atual}</p>
     </div>
-    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="indicador">
         <span>Valor Total Multas no Ano Atual</span>
-        <p style="font-size: 22px; margin: 5px 0;">R$ {valor_multas_ano_atual:,.2f}</p>
+        <p>R$ {valor_multas_ano_atual:,.2f}</p>
     </div>
-    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="indicador">
         <span>Multas no Mês Atual</span>
-        <p style="font-size: 22px; margin: 5px 0;">{multas_mes_atual}</p>
+        <p>{multas_mes_atual}</p>
     </div>
-    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="indicador">
         <span>Valor das Multas no Mês Atual</span>
-        <p style="font-size: 22px; margin: 5px 0;">R$ {valor_multas_mes_atual:,.2f}</p>
+        <p>R$ {valor_multas_mes_atual:,.2f}</p>
     </div>
-    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="indicador">
         <span>Data da Consulta</span>
-        <p style="font-size: 22px; margin: 5px 0;">{data_consulta}</p>
+        <p>{data_consulta}</p>
     </div>
 </div>
 """
 st.markdown(indicadores_html, unsafe_allow_html=True)
-
 
 st.markdown(
     """
@@ -655,7 +641,7 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
         )
 
         # Ajustar layout do gráfico
-        accumulated_chart.update_traces(marker=dict(size=8))
+        accumulated_chart.update_traces(marker=dict(size=16))
         accumulated_chart.update_layout(
             xaxis_title="",
             yaxis_title="Valores",

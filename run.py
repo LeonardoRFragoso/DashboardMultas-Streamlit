@@ -57,13 +57,17 @@ def ensure_coordinates(data, api_key):
             return [float('nan'), float('nan')]
         return [lat, lng]
 
-    # Aplica as coordenadas usando a função de cache
+    if 12 not in data.columns:
+        st.error("A coluna de Local da Infração (índice 12) não foi encontrada.")
+        data[['Latitude', 'Longitude']] = float('nan')
+        return data
+
     coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
 
     if coordinates.shape[1] == 2:
         data[['Latitude', 'Longitude']] = coordinates
     else:
-        st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
+        st.error("Erro ao carregar coordenadas. Colunas 'Latitude' e 'Longitude' estão com tamanho inconsistente.")
 
     return data
 
