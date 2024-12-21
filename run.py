@@ -170,7 +170,7 @@ st.markdown(
             color: #0066B4;
         }
         .indicador p {
-            font-size: 28px;
+            font-size: 22px;
             color: #0066B4;
             margin: 0;
             font-weight: bold;
