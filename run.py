@@ -344,6 +344,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Configurar local inicial do mapa com base nas coordenadas médias das multas
 if not map_data.empty and 'Latitude' in map_data.columns and 'Longitude' in map_data.columns:
     avg_lat = map_data['Latitude'].mean()
     avg_lon = map_data['Longitude'].mean()
@@ -352,7 +353,7 @@ else:
 
 m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
 
-# Adicionar marcadores com base em todas as multas (não filtradas)
+# Adicionar marcadores ao mapa (com base nos dados não filtrados)
 for _, row in map_data.iterrows():
     if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
         popup_content = f"""
@@ -366,6 +367,7 @@ for _, row in map_data.iterrows():
         ).add_to(m)
 
 st_folium(m, width="100%", height=600)
+  # Captura os cliques no mapa
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
