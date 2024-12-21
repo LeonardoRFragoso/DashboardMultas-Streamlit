@@ -3,7 +3,35 @@ import pandas as pd
 from datetime import datetime
 
 def apply_filters(data):
-    with st.expander("Filtros", expanded=False):
+    # Estilo para o expander e o aviso de filtro
+    st.markdown(
+        """
+        <style>
+            [data-testid="stExpander"] {
+                border: 2px solid #F37529;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+            [data-testid="stExpander"] > summary {
+                font-weight: bold;
+                font-size: 16px;
+                color: #F37529;
+            }
+            .filtro-alerta {
+                text-align: center;
+                color: #F37529;
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    # Alerta sutil para indicar que os filtros estão disponíveis
+    st.markdown('<div class="filtro-alerta">🔍 Use os filtros abaixo para refinar os resultados.</div>', unsafe_allow_html=True)
+
+    with st.expander("🔧 Filtros para Refinamento de Dados", expanded=False):
         data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
         data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
         
