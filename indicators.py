@@ -13,6 +13,7 @@ def render_css():
                 align-items: center;
                 gap: 40px;
                 margin-top: 30px;
+                flex-wrap: wrap;
             }
             .indicador {
                 display: flex;
@@ -85,34 +86,50 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 total_multas = filtered_unique_fines[5].nunique()
                 valor_total_multas = filtered_unique_fines[14].sum()
 
+    # Indicadores para o ano e mês atual
+    ano_atual = datetime.now().year
+    mes_atual = data_fim.month if data_fim else datetime.now().month
+
+    multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][5].nunique() if 9 in filtered_data.columns else 0
+    valor_multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][14].sum() if 14 in filtered_data.columns else 0
+
+    multas_mes_atual = filtered_data[
+        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
+    ][5].nunique() if 9 in filtered_data.columns else 0
+    valor_multas_mes_atual = filtered_data[
+        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
+    ][14].sum() if 14 in filtered_data.columns else 0
+
     # Exibir indicadores como cards clicáveis
     with st.container():
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Total de Multas", key="total_multas_button"):
-                st.session_state["show_total_multas"] = not st.session_state.get("show_total_multas", False)
+        st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
+        
+        # Função para criar o card clicável
+        def create_card(title, value, key):
+            if st.button(title, key=key):
+                st.session_state[key] = not st.session_state.get(key, False)
             st.markdown(
                 f"""
                 <div class="indicador">
-                    <span>Total de Multas</span>
-                    <p>{total_multas}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with col2:
-            st.markdown(
-                f"""
-                <div class="indicador">
-                    <span>Valor Total das Multas</span>
-                    <p>R$ {valor_total_multas:,.2f}</p>
+                    <span>{title}</span>
+                    <p>{value}</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
+        # Renderizar todos os indicadores
+        create_card("Total de Multas", total_multas, "total_multas_button")
+        create_card("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}", "valor_total_button")
+        create_card("Multas no Ano Atual", multas_ano_atual, "multas_ano_button")
+        create_card("Valor Total Multas no Ano Atual", f"R$ {valor_multas_ano_atual:,.2f}", "valor_ano_button")
+        create_card("Multas no Mês Atual", multas_mes_atual, "multas_mes_button")
+        create_card("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}", "valor_mes_button")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
     # Detalhes ocultos que aparecem ao clicar
-    if st.session_state.get("show_total_multas", False):
+    if st.session_state.get("total_multas_button", False):
         with st.expander("Detalhes do Total de Multas", expanded=True):
             st.dataframe(
                 filtered_unique_fines[[1, 12, 14, 9]].rename(
