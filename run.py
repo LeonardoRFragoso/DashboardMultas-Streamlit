@@ -238,17 +238,26 @@ st.markdown(
 # Indicadores principais com base no filtro de datas
 unique_fines = data.drop_duplicates(subset=['Auto de Infração'])  # Total geral de multas únicas
 
+# Depuração - Mostrar valores iniciais
+st.write("Valores totais (antes de filtro):", unique_fines['Auto de Infração'].nunique(), unique_fines['Valor a ser pago R$'].sum())
+
 # Verificar se algum filtro foi aplicado
 if data_inicio == datetime(datetime.now().year, 1, 1) and data_fim == datetime.now().date():
     # Se não houve alteração no filtro, mostrar o total geral
     total_multas = unique_fines['Auto de Infração'].nunique()
     valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
     filtered_unique_fines = unique_fines  # Exibir os dados completos
+    st.write("Sem filtro aplicado - Exibindo total geral")
 else:
     # Aplicar filtro de data se foi alterado
     filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
     total_multas = filtered_unique_fines['Auto de Infração'].nunique()
     valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
+    st.write("Filtro aplicado - Exibindo dados filtrados")
+
+# Depuração - Mostrar valores finais
+st.write("Total de Multas (após lógica):", total_multas)
+st.write("Valor Total das Multas (após lógica):", valor_total_multas)
 
 # Multas no mês atual (filtradas)
 mes_atual = datetime.now().month
@@ -257,7 +266,6 @@ valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da In
 
 # Indicador 5: Data da Consulta (primeiro registro não filtrado)
 data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
-
 
 # Estrutura HTML para exibição dos indicadores
 indicadores_html = f"""
@@ -285,6 +293,7 @@ indicadores_html = f"""
 </div>
 """
 st.markdown(indicadores_html, unsafe_allow_html=True)
+
 
 
 st.markdown(
