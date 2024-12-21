@@ -236,10 +236,10 @@ st.markdown(
 )
 
 # Indicadores principais com base no filtro de datas
-unique_fines = data.drop_duplicates(subset=['Auto de Infração'])  # Total geral de multas únicas
+unique_fines = data.drop_duplicates(subset=[5])  # Coluna 'Auto de Infração' com índice 5
 
 # Depuração - Mostrar valores iniciais
-st.write("Valores totais (antes de filtro):", unique_fines['Auto de Infração'].nunique(), unique_fines['Valor a ser pago R$'].sum())
+st.write("Valores totais (antes de filtro):", unique_fines[5].nunique(), unique_fines[14].sum())  # Índice 5 e 14
 
 # Verificar se algum filtro foi aplicado
 st.write("Filtro - Data de Início:", data_inicio)
@@ -251,15 +251,15 @@ if 'filtro_aplicado' not in st.session_state:
     st.session_state['filtro_aplicado'] = False
 
 if not st.session_state['filtro_aplicado']:
-    total_multas = unique_fines['Auto de Infração'].nunique()
-    valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
+    total_multas = unique_fines[5].nunique()
+    valor_total_multas = unique_fines[14].sum()
     filtered_unique_fines = unique_fines  # Exibir os dados completos
     st.write("Inicialização - Exibindo total geral")
 else:
     # Converter para date() para garantir comparação correta
     if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == datetime.now().date():
-        total_multas = unique_fines['Auto de Infração'].nunique()
-        valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
+        total_multas = unique_fines[5].nunique()
+        valor_total_multas = unique_fines[14].sum()
         filtered_unique_fines = unique_fines
         st.write("Sem filtro aplicado - Exibindo total geral")
     else:
@@ -267,20 +267,20 @@ else:
             st.write("Filtro aplicado, mas nenhum dado corresponde ao período selecionado.")
             total_multas = 0
             valor_total_multas = 0
-            filtered_unique_fines = pd.DataFrame(columns=['Auto de Infração', 'Valor a ser pago R$', 'Data da Infração'])
+            filtered_unique_fines = pd.DataFrame(columns=[5, 14, 9])
         else:
-            filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
-            total_multas = filtered_unique_fines['Auto de Infração'].nunique()
-            valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
+            filtered_unique_fines = filtered_data.drop_duplicates(subset=[5])
+            total_multas = filtered_unique_fines[5].nunique()
+            valor_total_multas = filtered_unique_fines[14].sum()
             st.write("Filtro aplicado - Exibindo dados filtrados")
     st.session_state['filtro_aplicado'] = True
 
 # Calcular multas e valores do ano atual
 ano_atual = datetime.now().year
-filtered_data_ano_atual = data[data['Data da Infração'].dt.year == ano_atual].drop_duplicates(subset=['Auto de Infração'])
+filtered_data_ano_atual = data[data[9].dt.year == ano_atual].drop_duplicates(subset=[5])
 
-multas_ano_atual = filtered_data_ano_atual['Auto de Infração'].nunique()
-valor_multas_ano_atual = filtered_data_ano_atual['Valor a ser pago R$'].sum()
+multas_ano_atual = filtered_data_ano_atual[5].nunique()
+valor_multas_ano_atual = filtered_data_ano_atual[14].sum()
 
 # Depuração - Mostrar valores finais
 st.write("Total de Multas (após lógica):", total_multas)
@@ -288,8 +288,8 @@ st.write("Valor Total das Multas (após lógica):", valor_total_multas)
 
 # Multas no mês atual (filtradas)
 mes_atual = datetime.now().month
-multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da Infração'].dt.month == mes_atual]['Auto de Infração'].nunique()
-valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da Infração'].dt.month == mes_atual]['Valor a ser pago R$'].sum()
+multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][5].nunique()
+valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][14].sum()
 
 # Indicador 5: Data da Consulta (primeiro registro não filtrado)
 data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
@@ -328,6 +328,7 @@ indicadores_html = f"""
 </div>
 """
 st.markdown(indicadores_html, unsafe_allow_html=True)
+
 
 st.markdown(
     """
