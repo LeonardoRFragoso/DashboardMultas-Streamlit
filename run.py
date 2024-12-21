@@ -352,12 +352,31 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Indicadores principais com base no filtro de datas
-if 5 in data.columns:
-    unique_fines = data.drop_duplicates(subset=[5])  # Total geral de multas únicas
+# Indicadores principais com base no filtro de dados
+if 5 in filtered_data.columns:
+    unique_fines = filtered_data.drop_duplicates(subset=[5])  # Total geral de multas únicas
 else:
     st.error("A coluna com índice 5 não foi encontrada nos dados.")
     unique_fines = pd.DataFrame(columns=[5, 14, 9])
+
+# Para exibir os indicadores baseados nos filtros aplicados
+total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
+valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
+
+# Indicadores HTML com os dados calculados
+indicadores_html = f"""
+<div class="indicadores-container" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <span>Total de Multas</span>
+        <p style="font-size: 22px; margin: 5px 0;">{total_multas}</p>
+    </div>
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <span>Valor Total das Multas</span>
+        <p style="font-size: 22px; margin: 5px 0;">R$ {valor_total_multas:,.2f}</p>
+    </div>
+</div>
+"""
+st.markdown(indicadores_html, unsafe_allow_html=True)
 
 # Forçar exibição do total geral na inicialização
 if 'filtro_aplicado' not in st.session_state:
