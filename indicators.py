@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+# Função para aplicar o CSS
 def render_css():
     st.markdown(
         """
@@ -47,6 +48,7 @@ def render_css():
         unsafe_allow_html=True,
     )
 
+# Função para renderizar indicadores
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
@@ -81,41 +83,50 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
         )
     except (IndexError, KeyError):
-        data_formatada = "N/A"  # Evita erro se não houver linha suficiente
+        data_formatada = "N/A"
 
-    # Renderizar todos os indicadores com um único bloco de HTML
+    # Renderizar todos os indicadores com HTML interativo
     indicadores_html = f"""
     <div class="indicadores-container">
-        <div class="indicador">
+        <div class="indicador" data-id="total_multas">
             <span>Total de Multas</span>
             <p>{total_multas}</p>
         </div>
-        <div class="indicador">
+        <div class="indicador" data-id="valor_total">
             <span>Valor Total das Multas</span>
             <p>R$ {valor_total_multas:,.2f}</p>
         </div>
-        <div class="indicador">
+        <div class="indicador" data-id="multas_ano">
             <span>Multas no Ano Atual</span>
             <p>{multas_ano_atual}</p>
         </div>
-        <div class="indicador">
+        <div class="indicador" data-id="valor_ano">
             <span>Valor Total Multas no Ano Atual</span>
             <p>R$ {valor_multas_ano_atual:,.2f}</p>
         </div>
-        <div class="indicador">
+        <div class="indicador" data-id="multas_mes">
             <span>Multas no Mês Atual</span>
             <p>{multas_mes_atual}</p>
         </div>
-        <div class="indicador">
+        <div class="indicador" data-id="valor_mes">
             <span>Valor das Multas no Mês Atual</span>
             <p>R$ {valor_multas_mes_atual:,.2f}</p>
         </div>
-        <div class="indicador">
+        <div class="indicador" data-id="data_consulta">
             <span>Data da Consulta</span>
             <p>{data_formatada}</p>
         </div>
     </div>
+    
+    <script>
+        const indicadores = document.querySelectorAll('.indicador');
+        indicadores.forEach(indicador => {{
+            indicador.addEventListener('dblclick', function() {{
+                const indicatorId = this.getAttribute('data-id');
+                fetch(`/abrir_planilha?id=${{indicatorId}}`);
+            }});
+        }});
+    </script>
     """
 
-    # Renderizar no Streamlit
     st.markdown(indicadores_html, unsafe_allow_html=True)
