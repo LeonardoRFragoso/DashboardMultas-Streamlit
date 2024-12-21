@@ -20,6 +20,7 @@ from streamlit_folium import st_folium
 CACHE_FILE = "coordinates_cache.json"
 
 def load_cache():
+    """Carregar o cache de coordenadas de um arquivo JSON."""
     try:
         with open(CACHE_FILE, "r") as file:
             return json.load(file)
@@ -27,10 +28,12 @@ def load_cache():
         return {}
 
 def save_cache(cache):
+    """Salvar o cache de coordenadas em um arquivo JSON."""
     with open(CACHE_FILE, "w") as file:
         json.dump(cache, file, indent=4)
 
 def download_file_from_drive(file_id, credentials_info):
+    """Download a file from Google Drive using its file ID."""
     credentials = Credentials.from_service_account_info(credentials_info)
     drive_service = build('drive', 'v3', credentials=credentials)
     request = drive_service.files().get_media(fileId=file_id)
@@ -44,9 +47,11 @@ def download_file_from_drive(file_id, credentials_info):
     file_buffer.seek(0)
     return file_buffer
 
+
 def preprocess_data(file_buffer):
+    """Preprocess the data from the file buffer."""
     data = pd.read_excel(file_buffer)
-    data.columns = range(len(data.columns))
+    data.columns = range(len(data.columns))  # Reindex columns
 
     for col_index in [13, 14]:
         data[col_index] = (
@@ -56,21 +61,35 @@ def preprocess_data(file_buffer):
             .str.replace(',', '.', regex=False)
             .astype(float)
         )
+
+    # Garantir que índice 9 seja tratado como datetime
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
+
     return data
 
+
 def ensure_coordinates(data, cache, api_key):
+    """Ensure Latitude and Longitude columns are populated once."""
+    # Verifica se as colunas já existem
+    if 'Latitude' in data.columns and 'Longitude' in data.columns:
+        return data  # Se as colunas já existem, retorna os dados diretamente
+
     def get_coordinates_with_cache(location):
         if location not in cache:
-            cache[location] = get_cached_coordinates(location, api_key, cache)
-        return cache[location]
+            coords = get_cached_coordinates(location, api_key, cache)
+            if coords is None or len(coords) != 2:
+                return pd.Series([None, None])
+            cache[location] = coords
+        return pd.Series(cache[location])
 
+    # Aplica coordenadas apenas uma vez
     data[['Latitude', 'Longitude']] = data[12].apply(
-        lambda loc: pd.Series(get_coordinates_with_cache(loc))
+        lambda loc: get_coordinates_with_cache(loc)
     )
     save_cache(cache)
     return data
 
+# Load secrets with error handling
 try:
     drive_credentials = json.loads(st.secrets["general"]["CREDENTIALS"])
     drive_file_id = st.secrets["file_data"]["ultima_planilha_id"]
@@ -79,8 +98,10 @@ except KeyError as e:
     st.error(f"Erro ao carregar os segredos: {e}")
     st.stop()
 
+# Streamlit setup
 st.set_page_config(page_title="Multas Dashboard", layout="wide")
 
+# CSS Styling
 st.markdown(
     """
     <style>
@@ -154,51 +175,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
-data = preprocess_data(file_buffer)
-
-if data.empty:
-    st.error("Os dados carregados estão vazios.")
-    st.stop()
-
-required_columns = [1, 5, 8, 11, 12, 14, 9]
-missing_columns = [col for col in required_columns if col not in data.columns]
-if missing_columns:
-    st.error(f"As colunas estão ausentes: {missing_columns}")
-    st.stop()
-
-data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
-data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
-
-codigo_infracao = st.selectbox("Código da Infração", options=["Todos"] + list(data[8].unique()))
-descricao_infracao = st.selectbox("Descrição da Infração", options=["Todas"] + list(data[11].unique()))
-placa = st.selectbox("Placa", options=["Todas"] + list(data[1].unique()))
-valor_min, valor_max = st.slider("Valor das Multas", float(data[14].min()), float(data[14].max()), (float(data[14].min()), float(data[14].max())))
-
-filtered_data = data[
-    (data[9] >= pd.Timestamp(data_inicio)) &
-    (data[9] <= pd.Timestamp(data_fim)) &
-    (data[14] >= valor_min) &
-    (data[14] <= valor_max)
-]
-
-if codigo_infracao != "Todos":
-    filtered_data = filtered_data[filtered_data[8] == codigo_infracao]
-
-if descricao_infracao != "Todas":
-    filtered_data = filtered_data[filtered_data[11] == descricao_infracao]
-
-if placa != "Todas":
-    filtered_data = filtered_data[filtered_data[1] == placa]
-
-unique_fines = filtered_data.drop_duplicates(subset=[5])
-total_multas = unique_fines[5].nunique()
-valor_total_multas = unique_fines[14].sum()
-
-st.markdown(f"Total de Multas: **{total_multas}**")
-st.markdown(f"Valor Total das Multas: **R$ {valor_total_multas:,.2f}**")
-
 
 # Logo
 st.markdown(
