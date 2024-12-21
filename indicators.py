@@ -84,9 +84,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     except (IndexError, KeyError):
         data_formatada = "N/A"
 
-    # Inicializa o estado de clique
-    if 'selected_indicator' not in st.session_state:
-        st.session_state.selected_indicator = None
+    # Inicializa o estado de clique duplo
+    if 'clicked_indicator' not in st.session_state:
+        st.session_state.clicked_indicator = None
+        st.session_state.click_count = 0
 
     # Renderizar os indicadores
     indicadores = {
@@ -106,9 +107,13 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     
     for i, col in enumerate(cols):
         with col:
-            # Botão invisível para capturar clique
+            # Botão invisível para capturar clique duplo
             if st.button(indicadores_keys[i].replace('_', ' ').title(), key=f"btn_{i}"):
-                st.session_state.selected_indicator = indicadores_keys[i]
+                if st.session_state.clicked_indicator == indicadores_keys[i]:
+                    st.session_state.click_count += 1
+                else:
+                    st.session_state.clicked_indicator = indicadores_keys[i]
+                    st.session_state.click_count = 1
 
             # Card estilizado (apenas visual)
             st.markdown(
@@ -121,9 +126,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True,
             )
 
-    # Exibe tabela se um card for clicado
-    if st.session_state.selected_indicator:
-        exibir_tabela(st.session_state.selected_indicator, data, filtered_data)
+    # Exibe tabela se o indicador for clicado duas vezes
+    if st.session_state.click_count == 2:
+        exibir_tabela(st.session_state.clicked_indicator, data, filtered_data)
+        st.session_state.click_count = 0  # Resetar clique duplo após abrir a tabela
 
 # Função para exibir tabela ao clicar duas vezes em um indicador
 def exibir_tabela(indicador_id, data, filtered_data):
