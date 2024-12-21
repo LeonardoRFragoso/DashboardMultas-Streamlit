@@ -13,7 +13,7 @@ def render_css():
                 align-items: center;
                 gap: 40px;
                 margin-top: 30px;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;  /* Impede quebra de linha */
             }
             .indicador {
                 display: flex;
@@ -98,40 +98,30 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     ][14].sum() if 14 in filtered_data.columns else 0
 
     # Exibir indicadores como cards clicáveis
-    with st.container():
-        st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
-        
-        # Função para criar o card clicável
-        def create_card(title, value, key):
-            if st.button(title, key=key):
-                st.session_state[key] = not st.session_state.get(key, False)
-            st.markdown(
-                f"""
-                <div class="indicador">
-                    <span>{title}</span>
-                    <p>{value}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
+    
+    # Função para criar o card clicável
+    def create_card(title, value, key):
+        card_html = f"""
+        <div class="indicador" onclick="toggleVisibility('{key}')">
+            <span>{title}</span>
+            <p>{value}</p>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
 
-        # Renderizar todos os indicadores em três colunas
-        col1, col2, col3 = st.columns(3)
+    # Renderizar todos os indicadores em uma linha
+    create_card("Total de Multas", total_multas, "total_multas")
+    create_card("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}", "valor_total")
+    create_card("Multas no Ano Atual", multas_ano_atual, "multas_ano")
+    create_card("Valor Total Multas no Ano Atual", f"R$ {valor_multas_ano_atual:,.2f}", "valor_ano")
+    create_card("Multas no Mês Atual", multas_mes_atual, "multas_mes")
+    create_card("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}", "valor_mes")
 
-        with col1:
-            create_card("Total de Multas", total_multas, "total_multas_button")
-            create_card("Multas no Ano Atual", multas_ano_atual, "multas_ano_button")
-        with col2:
-            create_card("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}", "valor_total_button")
-            create_card("Valor Total Multas no Ano Atual", f"R$ {valor_multas_ano_atual:,.2f}", "valor_ano_button")
-        with col3:
-            create_card("Multas no Mês Atual", multas_mes_atual, "multas_mes_button")
-            create_card("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}", "valor_mes_button")
-
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Detalhes ocultos que aparecem ao clicar
-    if st.session_state.get("total_multas_button", False):
+    if st.session_state.get("total_multas", False):
         with st.expander("Detalhes do Total de Multas", expanded=True):
             st.dataframe(
                 filtered_unique_fines[[1, 12, 14, 9]].rename(
@@ -144,3 +134,21 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 ).reset_index(drop=True),
                 use_container_width=True,
             )
+
+    # JavaScript para alternar a visibilidade
+    st.markdown(
+        """
+        <script>
+            function toggleVisibility(key) {
+                var element = document.getElementById(key);
+                if (element) {
+                    element.style.display = element.style.display === "none" ? "block" : "none";
+                }
+                const streamlitEvent = new Event("streamlit_toggle");
+                streamlitEvent.key = key;
+                window.dispatchEvent(streamlitEvent);
+            }
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
