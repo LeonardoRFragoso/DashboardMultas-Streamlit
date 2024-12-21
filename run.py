@@ -18,7 +18,6 @@ from folium.features import CustomIcon
 from streamlit_folium import st_folium
 from filters_module import apply_filters  # Importar o módulo de filtros
 
-
 CACHE_FILE = "coordinates_cache.json"
 
 def load_cache():
@@ -205,11 +204,6 @@ if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
 
-# Criação de cópia dos dados para o mapa antes da filtragem
-map_data = data.copy()
-map_data = ensure_coordinates(map_data, cache, api_key)  # Garante que o mapa terá coordenadas
-
-# Aplicar os filtros aos dados
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Ensure coordinates and cache
@@ -328,7 +322,6 @@ indicadores_html = f"""
 st.markdown(indicadores_html, unsafe_allow_html=True)
 
 
-# Exibição do mapa com todas as multas
 st.markdown(
     """
     <h2 style="
@@ -346,33 +339,43 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-if not map_data.empty and 'Latitude' in map_data.columns and 'Longitude' in map_data.columns:
-    avg_lat = map_data['Latitude'].mean()
-    avg_lon = map_data['Longitude'].mean()
+
+# Configurar local inicial do mapa com base nas coordenadas médias das multas
+if not filtered_data.empty and 'Latitude' in filtered_data.columns and 'Longitude' in filtered_data.columns:
+    avg_lat = filtered_data['Latitude'].mean()
+    avg_lon = filtered_data['Longitude'].mean()
 else:
     avg_lat, avg_lon = -23.5505, -46.6333  # Coordenadas padrão (São Paulo)
 
 m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
 
-for _, row in map_data.iterrows():
+# Ícone personalizado
+icon_url = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
+icon_size = (30, 30)
+
+# Adicionar marcadores ao mapa
+for _, row in filtered_data.iterrows():
     if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
         popup_content = f"""
         <b>Local:</b> {row[12]}<br>
         <b>Valor:</b> R$ {row[14]:,.2f}<br>
         <b>Data da Infração:</b> {row[9].strftime('%d/%m/%Y') if pd.notnull(row[9]) else "Não disponível"}
         """
+        marker_icon = CustomIcon(icon_url, icon_size=icon_size)
         Marker(
             location=[row['Latitude'], row['Longitude']],
-            popup=Popup(popup_content, max_width=300)
+            popup=Popup(popup_content, max_width=300),
+            icon=marker_icon
         ).add_to(m)
 
-# Garante que map_click_data seja definido corretamente
-map_click_data = st_folium(m, width="100%", height=600)
+# Detalhes das multas para localização selecionada
+map_click_data = st_folium(m, width="100%", height=600)  # Captura os cliques no mapa
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
     lng = map_click_data["last_object_clicked"].get("lng")
     
+    # Filtrar multas pela localização clicada
     selected_fines = filtered_data[
         (filtered_data['Latitude'] == lat) & 
         (filtered_data['Longitude'] == lng)
@@ -396,6 +399,7 @@ if map_click_data and map_click_data.get("last_object_clicked"):
             unsafe_allow_html=True
         )
 
+        # Exibir detalhes das multas no DataFrame
         st.dataframe(
             selected_fines[[1, 12, 14, 9, 11]].rename(
                 columns={
@@ -411,7 +415,6 @@ if map_click_data and map_click_data.get("last_object_clicked"):
         )
     else:
         st.info("Nenhuma multa encontrada para a localização selecionada.")
-
 
 # Graphs Section
 # Gráfico de Veículos com Mais Multas - Ajustado para Multas Únicas
