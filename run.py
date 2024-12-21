@@ -69,17 +69,24 @@ def preprocess_data(file_buffer):
 
 
 def ensure_coordinates(data, cache, api_key):
-    """Ensure Latitude and Longitude columns are populated."""
+    """Ensure Latitude and Longitude columns are populated once."""
+    # Verifica se as colunas já existem
+    if 'Latitude' in data.columns and 'Longitude' in data.columns:
+        return data  # Se as colunas já existem, retorna os dados diretamente
+
     def get_coordinates_with_cache(location):
         if location not in cache:
-            cache[location] = get_cached_coordinates(location, api_key, cache)
-        return cache[location]
+            coords = get_cached_coordinates(location, api_key, cache)
+            if coords is None or len(coords) != 2:
+                return pd.Series([None, None])
+            cache[location] = coords
+        return pd.Series(cache[location])
 
-    # Aplicar coordenadas para cada local no índice 12
+    # Aplica coordenadas apenas uma vez
     data[['Latitude', 'Longitude']] = data[12].apply(
-        lambda loc: pd.Series(get_coordinates_with_cache(loc))
+        lambda loc: get_coordinates_with_cache(loc)
     )
-    save_cache(cache)  # Salvar coordenadas atualizadas no cache
+    save_cache(cache)
     return data
 
 # Load secrets with error handling
