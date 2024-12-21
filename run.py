@@ -294,17 +294,40 @@ valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da In
 # Indicador 5: Data da Consulta (primeiro registro não filtrado)
 data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
 
-# Exibir indicadores no Streamlit usando colunas
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
-
-col1.metric("Total de Multas", total_multas)
-col2.metric("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}")
-col3.metric("Multas no Ano Atual", multas_ano_atual)
-col4.metric("Valor Total Multas no Ano Atual", f"R$ {valor_multas_ano_atual:,.2f}")
-col5.metric("Multas no Mês Atual", multas_mes_atual)
-col6.metric("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}")
-col7.metric("Data da Consulta", data_consulta)
-
+# Estrutura HTML para exibição dos indicadores
+indicadores_html = f"""
+<div class="indicadores-container">
+    <div class="indicador">
+        <span>Total de Multas</span>
+        <p>{total_multas}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor Total das Multas</span>
+        <p>R$ {valor_total_multas:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Multas no Ano Atual</span>
+        <p>{multas_ano_atual}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor Total Multas no Ano Atual</span>
+        <p>R$ {valor_multas_ano_atual:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Multas no Mês Atual</span>
+        <p>{multas_mes_atual}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor das Multas no Mês Atual</span>
+        <p>R$ {valor_multas_mes_atual:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Data da Consulta</span>
+        <p>{data_consulta}</p>
+    </div>
+</div>
+"""
+st.markdown(indicadores_html, unsafe_allow_html=True)
 
 st.markdown(
     """
