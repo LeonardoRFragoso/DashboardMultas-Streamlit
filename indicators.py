@@ -62,27 +62,34 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     ano_atual = datetime.now().year
     mes_atual = data_fim.month if data_fim else datetime.now().month
 
-    multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][5].nunique() if 9 in filtered_data.columns else 0
-    valor_multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][14].sum() if 14 in filtered_data.columns else 0
+    # Ajuste do cálculo de Multas e Valor no Ano Atual
+    multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][5].nunique() if 9 in unique_fines.columns else 0
+    valor_multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][14].sum() if 14 in unique_fines.columns else 0
+
+    # Multas e Valor no Mês Atual
     multas_mes_atual = filtered_data[
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][5].nunique() if 9 in filtered_data.columns else 0
+
     valor_multas_mes_atual = filtered_data[
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Card de Data da Consulta
+    # Ajuste da Data da Consulta
     data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
-    data_formatada = data_consulta.strftime('%d/%m/%Y') if isinstance(data_consulta, pd.Timestamp) else "N/A"
+    data_formatada = (
+        data_consulta.strftime('%d/%m/%Y')
+        if isinstance(data_consulta, pd.Timestamp) else "N/A"
+    )
 
     # Renderizar todos os indicadores com um único bloco de HTML
     indicadores_html = f"""
     <div class="indicadores-container">
-        <div class="indicador" onclick="toggleVisibility('detalhes1')">
+        <div class="indicador">
             <span>Total de Multas</span>
             <p>{total_multas}</p>
         </div>
-        <div class="indicador" onclick="toggleVisibility('detalhes2')">
+        <div class="indicador">
             <span>Valor Total das Multas</span>
             <p>R$ {valor_total_multas:,.2f}</p>
         </div>
