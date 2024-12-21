@@ -242,7 +242,7 @@ unique_fines = data.drop_duplicates(subset=['Auto de Infração'])  # Total gera
 st.write("Valores totais (antes de filtro):", unique_fines['Auto de Infração'].nunique(), unique_fines['Valor a ser pago R$'].sum())
 
 # Verificar se algum filtro foi aplicado
-if data_inicio == datetime(datetime.now().year, 1, 1) and data_fim == datetime.now().date():
+if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == datetime.now().date():
     # Se não houve alteração no filtro, mostrar o total geral
     total_multas = unique_fines['Auto de Infração'].nunique()
     valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
