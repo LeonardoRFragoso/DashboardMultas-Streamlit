@@ -238,14 +238,6 @@ st.markdown(
 # Indicadores principais com base no filtro de datas
 unique_fines = data.drop_duplicates(subset=[5])  # Coluna 'Auto de Infração' com índice 5
 
-# Depuração - Mostrar valores iniciais
-st.write("Valores totais (antes de filtro):", unique_fines[5].nunique(), unique_fines[14].sum())  # Índice 5 e 14
-
-# Verificar se algum filtro foi aplicado
-st.write("Filtro - Data de Início:", data_inicio)
-st.write("Filtro - Data Final:", data_fim)
-st.write("Comparação de Data Atual:", datetime(datetime.now().year, 1, 1).date(), datetime.now().date())
-
 # Forçar exibição do total geral na inicialização
 if 'filtro_aplicado' not in st.session_state:
     st.session_state['filtro_aplicado'] = False
