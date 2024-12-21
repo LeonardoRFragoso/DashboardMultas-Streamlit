@@ -13,7 +13,7 @@ def render_css():
                 align-items: center;
                 gap: 40px;
                 margin-top: 30px;
-                flex-wrap: nowrap;  /* Impede quebra de linha */
+                flex-wrap: wrap;  /* Permite quebra de linha */
             }
             .indicador {
                 display: flex;
