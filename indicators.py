@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# Função para aplicar o CSS original
+# Função para aplicar o CSS correto
 def render_css():
     st.markdown(
         """
@@ -11,19 +11,21 @@ def render_css():
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 20px;
+                gap: 30px;
                 flex-wrap: wrap;
             }
             .indicador {
-                display: inline-block;  /* Força os cards a ficarem lado a lado */
-                flex: 1 1 calc(33.333% - 40px);  /* Para dividir em 3 colunas */
-                max-width: 260px;
-                height: 160px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
                 text-align: center;
                 background-color: #FFFFFF;
                 border: 4px solid #0066B4;
                 border-radius: 15px;
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+                width: 260px;
+                height: 160px;
                 padding: 10px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
@@ -40,6 +42,9 @@ def render_css():
                 color: #0066B4;
                 margin: 0;
                 font-weight: bold;
+            }
+            .hidden {
+                display: none;
             }
         </style>
         """,
@@ -92,10 +97,9 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Exibir indicadores como cards clicáveis
+    # Exibir indicadores lado a lado como cards clicáveis
     st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
-    
-    # Criar o card clicável
+
     def create_card(title, value, key):
         card_html = f"""
         <div class="indicador" onclick="toggleVisibility('{key}')">
@@ -105,7 +109,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         """
         st.markdown(card_html, unsafe_allow_html=True)
 
-    # Renderizar indicadores lado a lado
     create_card("Total de Multas", total_multas, "total_multas")
     create_card("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}", "valor_total")
     create_card("Multas no Ano Atual", multas_ano_atual, "multas_ano")
@@ -114,34 +117,3 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     create_card("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}", "valor_mes")
 
     st.markdown('</div>', unsafe_allow_html=True)
-
-    if st.session_state.get("total_multas", False):
-        with st.expander("Detalhes do Total de Multas", expanded=True):
-            st.dataframe(
-                filtered_unique_fines[[1, 12, 14, 9]].rename(
-                    columns={
-                        1: 'Placa Relacionada',
-                        12: 'Local da Infração',
-                        14: 'Valor a ser pago R$',
-                        9: 'Data da Infração'
-                    }
-                ).reset_index(drop=True),
-                use_container_width=True,
-            )
-
-    st.markdown(
-        """
-        <script>
-            function toggleVisibility(key) {
-                var element = document.getElementById(key);
-                if (element) {
-                    element.style.display = element.style.display === "none" ? "block" : "none";
-                }
-                const streamlitEvent = new Event("streamlit_toggle");
-                streamlitEvent.key = key;
-                window.dispatchEvent(streamlitEvent);
-            }
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
