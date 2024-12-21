@@ -64,7 +64,7 @@ def exibir_tabela(indicador_id, data, filtered_data):
 
     st.dataframe(tabela.reset_index(drop=True))
 
-# Função para renderizar indicadores e capturar clique
+# Função para renderizar indicadores com clique estilizado
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
@@ -117,15 +117,26 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         "data_consulta": data_formatada
     }
 
-    # Renderizar indicadores com botões para simular clique
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+    # Renderizar indicadores como blocos clicáveis (HTML)
+    st.markdown("<div class='indicadores-container'>", unsafe_allow_html=True)
+    for key, value in indicadores.items():
+        # Checa se o indicador foi clicado
+        selected_class = "selected" if st.session_state.clicked_indicator == key else ""
 
-    colunas = [col1, col2, col3, col4, col5, col6, col7]
-    for i, (key, value) in enumerate(indicadores.items()):
-        with colunas[i]:
-            if st.button(f"{key.replace('_', ' ').title()}"):
-                st.session_state.clicked_indicator = key
-                st.session_state.click_count += 1
+        # Criação do bloco de indicador
+        if st.markdown(
+            f"""
+            <div class="indicador {selected_class}" onclick="send('{key}')">
+                <span>{key.replace('_', ' ').title()}</span>
+                <p>{value}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        ):
+            st.session_state.clicked_indicator = key
+            st.session_state.click_count += 1
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # Exibe tabela após 2 cliques
     if st.session_state.click_count >= 2:
