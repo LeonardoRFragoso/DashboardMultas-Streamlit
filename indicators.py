@@ -7,15 +7,15 @@ def render_css():
         """
         <style>
             .indicadores-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            justify-content: center;
-            gap: 30px;
-            margin-top: 30px;
-            max-width: 1400px;
-            margin-left: auto;
-            margin-right: auto;
-        }
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                justify-content: center;
+                gap: 25px;
+                margin-top: 30px;
+                max-width: 1600px;
+                margin-left: auto;
+                margin-right: auto;
+            }
 
             .indicador {
                 background-color: #FFFFFF;
@@ -24,8 +24,8 @@ def render_css():
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
                 text-align: center;
                 padding: 20px;
-                width: 260px;
-                height: 160px;
+                width: 210px;
+                height: 140px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
             }
