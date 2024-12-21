@@ -63,12 +63,22 @@ def preprocess_data(file_buffer):
 def ensure_coordinates(data, cache, api_key):
     def get_coordinates_with_cache(location):
         if location not in cache:
-            cache[location] = get_cached_coordinates(location, api_key, cache)
+            try:
+                cache[location] = get_cached_coordinates(location, api_key, cache)
+            except Exception as e:
+                st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
+                return [np.nan, np.nan]  # Retorna NaN se falhar
         return cache[location]
 
-    data[['Latitude', 'Longitude']] = data[12].apply(
-        lambda loc: pd.Series(get_coordinates_with_cache(loc))
-    )
+    # Garantir que o resultado tenha sempre 2 valores
+    coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
+
+    # Validar tamanho para evitar erro de atribuição
+    if coordinates.shape[1] == 2:
+        data[['Latitude', 'Longitude']] = coordinates
+    else:
+        st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
+
     save_cache(cache)
     return data
 
