@@ -176,7 +176,7 @@ if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
 
-filtered_data = apply_filters(data)
+filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Ensure coordinates and cache
 cache = load_cache()  # Carregar coordenadas do cache
