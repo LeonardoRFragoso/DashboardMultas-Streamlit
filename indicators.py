@@ -8,10 +8,10 @@ def render_css():
         """
         <style>
             .indicadores-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));  /* Layout responsivo */
-                gap: 30px;
+                display: flex;
                 justify-content: center;
+                flex-wrap: wrap;  /* Permite que quebrem em linhas se necessário */
+                gap: 30px;
                 margin-top: 30px;
                 max-width: 1200px;
                 margin-left: auto;
@@ -24,6 +24,7 @@ def render_css():
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
                 text-align: center;
                 padding: 20px;
+                width: 260px;
                 height: 160px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
@@ -92,7 +93,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Renderizar indicadores com CSS Grid
+    # Renderizar indicadores com CSS Flexbox
     st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
 
     def create_card(title, value):
