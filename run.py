@@ -246,17 +246,14 @@ if not st.session_state['filtro_aplicado']:
     total_multas = unique_fines[5].nunique()
     valor_total_multas = unique_fines[14].sum()
     filtered_unique_fines = unique_fines  # Exibir os dados completos
-    st.write("Inicialização - Exibindo total geral")
 else:
     # Converter para date() para garantir comparação correta
     if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == datetime.now().date():
         total_multas = unique_fines[5].nunique()
         valor_total_multas = unique_fines[14].sum()
         filtered_unique_fines = unique_fines
-        st.write("Sem filtro aplicado - Exibindo total geral")
     else:
         if filtered_data.empty:
-            st.write("Filtro aplicado, mas nenhum dado corresponde ao período selecionado.")
             total_multas = 0
             valor_total_multas = 0
             filtered_unique_fines = pd.DataFrame(columns=[5, 14, 9])
@@ -264,7 +261,6 @@ else:
             filtered_unique_fines = filtered_data.drop_duplicates(subset=[5])
             total_multas = filtered_unique_fines[5].nunique()
             valor_total_multas = filtered_unique_fines[14].sum()
-            st.write("Filtro aplicado - Exibindo dados filtrados")
     st.session_state['filtro_aplicado'] = True
 
 # Calcular multas e valores do ano atual
@@ -274,9 +270,6 @@ filtered_data_ano_atual = data[data[9].dt.year == ano_atual].drop_duplicates(sub
 multas_ano_atual = filtered_data_ano_atual[5].nunique()
 valor_multas_ano_atual = filtered_data_ano_atual[14].sum()
 
-# Depuração - Mostrar valores finais
-st.write("Total de Multas (após lógica):", total_multas)
-st.write("Valor Total das Multas (após lógica):", valor_total_multas)
 
 # Multas no mês atual (filtradas)
 mes_atual = datetime.now().month
