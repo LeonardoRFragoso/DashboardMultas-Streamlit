@@ -214,7 +214,7 @@ if missing_columns:
     st.stop()
 
 # Filters
-with st.expander("Filtros", expanded=True):  # A seção começa aberta
+with st.expander("Filtros", expanded=False):  # A seção começa fechada
     data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
     data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
     codigo_infracao_opcoes = data[8].dropna().unique()
@@ -224,6 +224,7 @@ with st.expander("Filtros", expanded=True):  # A seção começa aberta
     valor_min, valor_max = st.slider("Selecione o intervalo de valores das multas", min_value=float(data[14].min()), max_value=float(data[14].max()), value=(float(data[14].min()), float(data[14].max())), step=0.01)
     placa_opcoes = data[1].dropna().unique()
     placa_selecionada = st.multiselect("Selecione a Placa do Veículo", options=placa_opcoes, default=placa_opcoes.tolist())
+
 
 # Apply filters
 filtered_data = data[(data[9] >= pd.Timestamp(data_inicio)) & (data[9] <= pd.Timestamp(data_fim))]
@@ -417,7 +418,6 @@ indicadores_html = f"""
 </div>
 """
 st.markdown(indicadores_html, unsafe_allow_html=True)
-
 
 
 st.markdown(
