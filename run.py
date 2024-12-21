@@ -236,11 +236,20 @@ st.markdown(
 )
 
 # Indicadores principais com base no filtro de datas
-filtered_unique_fines = filtered_data.drop_duplicates(subset=[5])
+unique_fines = data.drop_duplicates(subset=[5])  # Total geral de multas únicas
 
-total_multas = filtered_unique_fines[5].nunique()
-valor_total_multas = filtered_unique_fines[14].sum()
+# Verificar se o filtro de data foi alterado
+if (data_inicio == datetime(datetime.now().year, 1, 1)) and (data_fim == datetime.now()):
+    # Se o filtro estiver no padrão (ano inteiro), mostrar o total geral
+    total_multas = unique_fines[5].nunique()
+    valor_total_multas = unique_fines[14].sum()
+else:
+    # Se o filtro foi alterado, mostrar os valores filtrados
+    filtered_unique_fines = filtered_data.drop_duplicates(subset=[5])
+    total_multas = filtered_unique_fines[5].nunique()
+    valor_total_multas = filtered_unique_fines[14].sum()
 
+# Multas no mês atual (filtradas)
 mes_atual = datetime.now().month
 multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][5].nunique()
 valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][14].sum()
