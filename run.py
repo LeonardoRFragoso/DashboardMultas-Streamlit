@@ -10,7 +10,6 @@ from graph_weekday_infractions import create_weekday_infractions_chart
 from graph_fines_accumulated import create_fines_accumulated_chart
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-from indicators import render_indicators
 from google.oauth2.service_account import Credentials
 import io
 import plotly.express as px
@@ -212,8 +211,116 @@ filtered_data, data_inicio, data_fim = apply_filters(data)
 # Garantir coordenadas com cache
 filtered_data = ensure_coordinates(filtered_data, api_key)
 
-# Renderizar Indicadores
-render_indicators(data, filtered_data, data_inicio, data_fim)
+st.markdown(
+    """
+    <h2 style="
+        text-align: center; 
+        color: #0066B4; 
+        border-bottom: 2px solid #0066B4; 
+        padding-bottom: 5px; 
+        margin: 20px auto; 
+        display: block; 
+        width: 100%; 
+    ">
+        Indicadores Principais
+    </h2>
+    """, 
+    unsafe_allow_html=True
+)
+
+# Indicadores principais com base no filtro de datas
+if 5 in data.columns:
+    unique_fines = data.drop_duplicates(subset=[5])  # Total geral de multas únicas
+else:
+    st.error("A coluna com índice 5 não foi encontrada nos dados.")
+    unique_fines = pd.DataFrame(columns=[5, 14, 9])
+
+# Forçar exibição do total geral na inicialização
+if 'filtro_aplicado' not in st.session_state:
+    st.session_state['filtro_aplicado'] = False
+
+if not st.session_state['filtro_aplicado']:
+    total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
+    valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
+    filtered_unique_fines = unique_fines  # Exibir os dados completos
+else:
+    # Converter para date() para garantir comparação correta
+    if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == datetime.now().date():
+        total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
+        valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
+        filtered_unique_fines = unique_fines
+    else:
+        if filtered_data.empty:
+            total_multas = 0
+            valor_total_multas = 0
+            filtered_unique_fines = pd.DataFrame(columns=[5, 14, 9])
+        else:
+            filtered_unique_fines = filtered_data.drop_duplicates(subset=[5]) if 5 in filtered_data.columns else pd.DataFrame()
+            total_multas = filtered_unique_fines[5].nunique() if 5 in filtered_unique_fines.columns else 0
+            valor_total_multas = filtered_unique_fines[14].sum() if 14 in filtered_unique_fines.columns else 0
+    st.session_state['filtro_aplicado'] = True
+
+# Calcular multas e valores do ano atual
+ano_atual = datetime.now().year
+if 9 in data.columns:
+    filtered_data_ano_atual = data[data[9].dt.year == ano_atual].drop_duplicates(subset=[5])
+    multas_ano_atual = filtered_data_ano_atual[5].nunique() if 5 in filtered_data_ano_atual.columns else 0
+    valor_multas_ano_atual = filtered_data_ano_atual[14].sum() if 14 in filtered_data_ano_atual.columns else 0
+else:
+    multas_ano_atual = 0
+    valor_multas_ano_atual = 0
+
+mes_atual = data_fim.month  # Basear o mês atual na data final selecionada
+ano_atual = data_fim.year   # Garantir que o ano também seja considerado
+
+multas_mes_atual = filtered_data[
+    (filtered_data[9].dt.month == mes_atual) &
+    (filtered_data[9].dt.year == ano_atual)
+][5].nunique()
+
+valor_multas_mes_atual = filtered_data[
+    (filtered_data[9].dt.month == mes_atual) &
+    (filtered_data[9].dt.year == ano_atual)
+][14].sum()
+
+
+# Indicador 5: Data da Consulta (primeiro registro não filtrado)
+data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
+
+# Estrutura HTML para exibição dos indicadores
+indicadores_html = f"""
+<div class="indicadores-container">
+    <div class="indicador">
+        <span>Total de Multas</span>
+        <p>{total_multas}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor Total das Multas</span>
+        <p>R$ {valor_total_multas:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Multas no Ano Atual</span>
+        <p>{multas_ano_atual}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor Total Multas no Ano Atual</span>
+        <p>R$ {valor_multas_ano_atual:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Multas no Mês Atual</span>
+        <p>{multas_mes_atual}</p>
+    </div>
+    <div class="indicador">
+        <span>Valor das Multas no Mês Atual</span>
+        <p>R$ {valor_multas_mes_atual:,.2f}</p>
+    </div>
+    <div class="indicador">
+        <span>Data da Consulta</span>
+        <p>{data_consulta}</p>
+    </div>
+</div>
+"""
+st.markdown(indicadores_html, unsafe_allow_html=True)
 
 st.markdown(
     """
