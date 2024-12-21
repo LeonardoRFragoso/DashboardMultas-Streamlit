@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from graph_geo_distribution import create_geo_distribution_map
-from geo_utils import get_cached_coordinates, initialize_cache, get_coordinates_with_cache
+from geo_utils import get_cached_coordinates, initialize_cache
 from graph_vehicles_fines import create_vehicle_fines_chart
 from graph_common_infractions import create_common_infractions_chart
 from graph_weekday_infractions import create_weekday_infractions_chart
@@ -50,29 +50,22 @@ def preprocess_data(file_buffer):
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
     return data
 
-
-
 def ensure_coordinates(data, api_key):
     def get_coordinates_with_cache(location):
-        if location not in cache:
-            try:
-                lat, lng = get_cached_coordinates(location, api_key, cache)
-                if lat is not None and lng is not None:
-                    cache[location] = (lat, lng)
-                else:
-                    cache[location] = (np.nan, np.nan)
-            except Exception as e:
-                st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
-                cache[location] = (np.nan, np.nan)
-        return cache[location]
+        lat, lng = get_cached_coordinates(location, api_key)
+        if lat is None or lng is None:
+            return [float('nan'), float('nan')]
+        return [lat, lng]
 
-    
-    # Aplicar as coordenadas com garantia de formato correto
-    coordinates = data['Local da Infração'].apply(lambda loc: get_coordinates_with_cache(loc))
-    data[['Latitude', 'Longitude']] = pd.DataFrame(coordinates.tolist(), index=data.index)
+    # Aplica as coordenadas usando a função de cache
+    coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
+
+    if coordinates.shape[1] == 2:
+        data[['Latitude', 'Longitude']] = coordinates
+    else:
+        st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
 
     return data
-
 
 try:
     drive_credentials = json.loads(st.secrets["general"]["CREDENTIALS"])
@@ -212,12 +205,7 @@ if data.empty:
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Garantir coordenadas com cache
-if 12 in filtered_data.columns:
-    coordinates = filtered_data[12].apply(lambda loc: get_coordinates_with_cache(loc))
-    filtered_data[['Latitude', 'Longitude']] = pd.DataFrame(coordinates.tolist(), index=filtered_data.index)
-else:
-    st.warning("A coluna de Local da Infração (índice 12) não foi encontrada.")
-
+filtered_data = ensure_coordinates(filtered_data, api_key)
 
 st.markdown(
     """
