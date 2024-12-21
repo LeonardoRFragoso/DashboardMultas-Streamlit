@@ -277,14 +277,19 @@ else:
     multas_ano_atual = 0
     valor_multas_ano_atual = 0
 
-# Garantir que a filtragem do mês atual considere apenas multas únicas (como no script anterior)
-mes_atual = datetime.now().month
-if 9 in filtered_unique_fines.columns:
-    multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][5].nunique()
-    valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][14].sum()
-else:
-    multas_mes_atual = 0
-    valor_multas_mes_atual = 0
+mes_atual = data_fim.month  # Basear o mês atual na data final selecionada
+ano_atual = data_fim.year   # Garantir que o ano também seja considerado
+
+multas_mes_atual = filtered_data[
+    (filtered_data[9].dt.month == mes_atual) &
+    (filtered_data[9].dt.year == ano_atual)
+][5].nunique()
+
+valor_multas_mes_atual = filtered_data[
+    (filtered_data[9].dt.month == mes_atual) &
+    (filtered_data[9].dt.year == ano_atual)
+][14].sum()
+
 
 # Indicador 5: Data da Consulta (primeiro registro não filtrado)
 data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
