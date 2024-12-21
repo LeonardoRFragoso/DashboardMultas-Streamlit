@@ -83,39 +83,32 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.session_state.selected_indicator = None
 
     # Renderiza Indicadores
+    cols = st.columns(7)
     indicadores_keys = list(indicadores.keys())
+    
+    for i, col in enumerate(cols):
+        with col:
+            # Exibir botão invisível sobre o card
+            if st.button(indicadores_keys[i].replace('_', ' ').title()):
+                if st.session_state.selected_indicator == indicadores_keys[i]:
+                    st.session_state.selected_indicator = None
+                else:
+                    st.session_state.selected_indicator = indicadores_keys[i]
 
-    st.markdown('<div class="indicadores-container">', unsafe_allow_html=True)
-    for indicador in indicadores_keys:
-        # Cada card é um botão invisível que executa o clique duplo
-        js_code = f"""
-        <script>
-        var card = document.getElementById('{indicador}');
-        card.addEventListener('dblclick', function() {{
-            fetch('/_stcore/double_click?indicador={indicador}').then(r => r.json()).then(data => {{
-                var el = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
-                el.scrollTop = el.scrollHeight;
-            }});
-        }});
-        </script>
-        """
-
-        # Renderiza cada card com um ID único para capturar o evento de clique duplo
-        st.markdown(
-            f"""
-            <div class="indicador" id="{indicador}">
-                <span>{indicador.replace('_', ' ').title()}</span>
-                <p>{indicadores[indicador]}</p>
-            </div>
-            {js_code}
-            """,
-            unsafe_allow_html=True,
-        )
-    st.markdown('</div>', unsafe_allow_html=True)
+            # Renderizar o card com HTML
+            st.markdown(
+                f"""
+                <div class="indicador">
+                    <span>{indicadores_keys[i].replace('_', ' ').title()}</span>
+                    <p>{indicadores[indicadores_keys[i]]}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     # Exibe tabela se um indicador for clicado duas vezes
-    if st.query_params.get("indicador"):
-        exibir_tabela(st.query_params["indicador"], data, filtered_data)
+    if st.session_state.selected_indicator:
+        exibir_tabela(st.session_state.selected_indicator, data, filtered_data)
 
 # Função para exibir tabela ao clicar duas vezes em um indicador
 def exibir_tabela(indicador_id, data, filtered_data):
