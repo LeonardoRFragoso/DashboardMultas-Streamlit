@@ -7,6 +7,17 @@ def render_css():
     st.markdown(
         """
         <style>
+            .indicadores-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                justify-content: center;
+                gap: 25px;
+                margin-top: 30px;
+                max-width: 1600px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
             .indicador {
                 background-color: #FFFFFF;
                 border: 4px solid #0066B4;
@@ -14,12 +25,10 @@ def render_css():
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
                 text-align: center;
                 padding: 20px;
+                width: 210px;
                 height: 140px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
             }
             .indicador:hover {
                 transform: scale(1.05);
@@ -29,39 +38,17 @@ def render_css():
                 color: #0066B4;
             }
             .indicador p {
-                font-size: 28px;
+                font-size: 24px;
                 color: #0066B4;
                 margin: 0;
                 font-weight: bold;
-            }
-            .selected {
-                border: 4px solid red !important;
-            }
-            .invisible-submit {
-                opacity: 0;
-                height: 0;
-                width: 0;
-                position: absolute;
             }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-# Função para exibir a tabela
-def exibir_tabela(indicador_id, data, filtered_data):
-    st.markdown(f"### Detalhes: {indicador_id.replace('_', ' ').title()}")
-    
-    if indicador_id == "total_multas":
-        tabela = data.drop_duplicates(subset=[5])
-    elif indicador_id == "valor_total":
-        tabela = data[[5, 14, 12, 9]].drop_duplicates(subset=[5])
-    else:
-        tabela = filtered_data
-
-    st.dataframe(tabela.reset_index(drop=True))
-
-# Função para renderizar indicadores clicáveis
+# Função para renderizar indicadores
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
@@ -88,9 +75,9 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Data da última consulta
+    # Ajuste da Data da Consulta (linha 2, índice 0)
     try:
-        data_consulta = data.iloc[1, 0]
+        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
         data_formatada = (
             data_consulta.strftime('%d/%m/%Y')
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
@@ -98,49 +85,48 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     except (IndexError, KeyError):
         data_formatada = "N/A"
 
-    # Inicializa o estado do indicador clicado
-    if 'clicked_indicator' not in st.session_state:
-        st.session_state.clicked_indicator = None
-        st.session_state.click_count = 0
+    # Renderizar todos os indicadores com HTML interativo
+    indicadores_html = f"""
+    <div class="indicadores-container">
+        <div class="indicador" data-id="total_multas">
+            <span>Total de Multas</span>
+            <p>{total_multas}</p>
+        </div>
+        <div class="indicador" data-id="valor_total">
+            <span>Valor Total das Multas</span>
+            <p>R$ {valor_total_multas:,.2f}</p>
+        </div>
+        <div class="indicador" data-id="multas_ano">
+            <span>Multas no Ano Atual</span>
+            <p>{multas_ano_atual}</p>
+        </div>
+        <div class="indicador" data-id="valor_ano">
+            <span>Valor Total Multas no Ano Atual</span>
+            <p>R$ {valor_multas_ano_atual:,.2f}</p>
+        </div>
+        <div class="indicador" data-id="multas_mes">
+            <span>Multas no Mês Atual</span>
+            <p>{multas_mes_atual}</p>
+        </div>
+        <div class="indicador" data-id="valor_mes">
+            <span>Valor das Multas no Mês Atual</span>
+            <p>R$ {valor_multas_mes_atual:,.2f}</p>
+        </div>
+        <div class="indicador" data-id="data_consulta">
+            <span>Data da Consulta</span>
+            <p>{data_formatada}</p>
+        </div>
+    </div>
+    
+    <script>
+        const indicadores = document.querySelectorAll('.indicador');
+        indicadores.forEach(indicador => {{
+            indicador.addEventListener('dblclick', function() {{
+                const indicatorId = this.getAttribute('data-id');
+                fetch(`/abrir_planilha?id=${{indicatorId}}`);
+            }});
+        }});
+    </script>
+    """
 
-    # Dicionário de indicadores
-    indicadores = {
-        "total_multas": total_multas,
-        "valor_total": f"R$ {valor_total_multas:,.2f}",
-        "multas_ano": multas_ano_atual,
-        "valor_ano": f"R$ {valor_multas_ano_atual:,.2f}",
-        "multas_mes": multas_mes_atual,
-        "valor_mes": f"R$ {valor_multas_mes_atual:,.2f}",
-        "data_consulta": data_formatada
-    }
-
-    # Cria 7 colunas para alinhar os indicadores lado a lado
-    cols = st.columns(7)
-
-    # Renderizar cada card de indicador como um botão real (formulário invisível)
-    for i, (key, value) in enumerate(indicadores.items()):
-        with cols[i]:
-            selected_class = "selected" if st.session_state.clicked_indicator == key else ""
-
-            # Formulário invisível para capturar cliques no card
-            with st.form(key=f"form_{key}"):
-                st.markdown(
-                    f"""
-                    <button class="indicador {selected_class}" type="submit" name="clicked_indicator" value="{key}">
-                        <span>{key.replace('_', ' ').title()}</span>
-                        <p>{value}</p>
-                    </button>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                st.form_submit_button(" ", key=f"submit_{key}", kwargs={"class": "invisible-submit"})
-
-            # Captura o clique diretamente
-            if st.session_state.get(f"submit_{key}"):
-                st.session_state.clicked_indicator = key
-                st.session_state.click_count += 1
-
-    # Exibe tabela após 2 cliques
-    if st.session_state.click_count >= 2:
-        exibir_tabela(st.session_state.clicked_indicator, data, filtered_data)
-        st.session_state.click_count = 0
+    st.markdown(indicadores_html, unsafe_allow_html=True)
