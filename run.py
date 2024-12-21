@@ -12,6 +12,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2.service_account import Credentials
 import io
+import numpy as np  # Importante para lidar com NaN corretamente
 import plotly.express as px
 from folium import Map, Marker, Popup
 from folium.features import CustomIcon
@@ -39,32 +40,42 @@ def preprocess_data(file_buffer):
     data = pd.read_excel(file_buffer)
     data.columns = range(len(data.columns))
 
+    # Verifica se as colunas 13 e 14 existem para evitar erro
     for col_index in [13, 14]:
-        data[col_index] = (
-            data[col_index]
-            .astype(str)
-            .str.replace('.', '', regex=False)
-            .str.replace(',', '.', regex=False)
-            .astype(float)
-        )
-    data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
+        if col_index in data.columns:
+            data[col_index] = (
+                data[col_index]
+                .astype(str)
+                .str.replace('.', '', regex=False)
+                .str.replace(',', '.', regex=False)
+                .astype(float)
+            )
+    
+    # Converter a coluna de datas apenas se existir
+    if 9 in data.columns:
+        data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
+    
     return data
 
 def ensure_coordinates(data, api_key):
+    # Verifica se a coluna 12 (localização) existe
+    if 12 not in data.columns:
+        st.warning("A coluna 12 (Localização) não foi encontrada nos dados.")
+        return data
+
     def get_coordinates_with_cache(location):
         lat, lng = get_cached_coordinates(location, api_key)
-        if lat is None or lng is None:
-            return [float('nan'), float('nan')]
-        return [lat, lng]
+        return [lat if lat is not None else np.nan, lng if lng is not None else np.nan]
 
-    # Aplica as coordenadas usando a função de cache
+    # Aplica coordenadas com verificação robusta
     coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
 
+    # Verifica se as coordenadas possuem duas colunas (lat, lng)
     if coordinates.shape[1] == 2:
         data[['Latitude', 'Longitude']] = coordinates
     else:
-        st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
-
+        st.error("Erro ao carregar coordenadas. Não foi possível processar 'Latitude' e 'Longitude' corretamente.")
+    
     return data
 
 try:
@@ -77,11 +88,11 @@ except KeyError as e:
 
 st.set_page_config(page_title="Multas Dashboard", layout="wide")
 
-# UI e estilo original completo
+# Estilização do Dashboard
 st.markdown(
     """
     <style>
-        /* Estilização para o expander (filtros) */
+        /* Expander de Filtros */
         .filter-expander {
             border: 2px solid #F37529;
             border-radius: 10px;
@@ -97,7 +108,7 @@ st.markdown(
             cursor: pointer;
         }
 
-        /* Alerta sutil para uso de filtros */
+        /* Alerta para Filtros */
         .filtro-alerta {
             text-align: center;
             color: #F37529;
@@ -106,7 +117,7 @@ st.markdown(
             font-weight: 500;
         }
 
-        /* Container e estilo do título principal */
+        /* Título e Logo */
         .titulo-dashboard-container {
             display: flex;
             flex-direction: column;
@@ -132,20 +143,6 @@ st.markdown(
             font-size: 18px;
             color: #555555;
             margin: 10px 0 0 0;
-        }
-
-        /* Estilização do container do logo */
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .logo-container img {
-            max-width: 200px;
-            height: auto;
         }
     </style>
     """,
@@ -176,9 +173,10 @@ if data.empty:
 # Aplicar filtros
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
-# Garantir coordenadas com cache
+# Garantir coordenadas
 filtered_data = ensure_coordinates(filtered_data, api_key)
 
+# Exibir Indicadores
 st.markdown(
     """
     <h2 style="
@@ -187,8 +185,7 @@ st.markdown(
         border-bottom: 2px solid #0066B4; 
         padding-bottom: 5px; 
         margin: 20px auto; 
-        display: block; 
-        width: 100%; 
+        width: 100%;
     ">
         Indicadores Principais
     </h2>
