@@ -641,7 +641,7 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
         )
 
         # Ajustar layout do gráfico
-        accumulated_chart.update_traces(marker=dict(size=12))
+        accumulated_chart.update_traces(marker=dict(size=16))
         accumulated_chart.update_layout(
             xaxis_title="",
             yaxis_title="Valores",
