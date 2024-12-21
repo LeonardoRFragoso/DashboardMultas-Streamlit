@@ -350,40 +350,50 @@ st.markdown(
 )
 
 
-# Configurar local inicial do mapa com base nas coordenadas médias das multas
-if not filtered_data.empty and 'Latitude' in filtered_data.columns and 'Longitude' in filtered_data.columns:
-    avg_lat = filtered_data['Latitude'].mean()
-    avg_lon = filtered_data['Longitude'].mean()
-else:
-    avg_lat, avg_lon = -23.5505, -46.6333  # Coordenadas padrão (São Paulo)
+# Armazenar o mapa no session state para evitar recarregamento
+if 'map' not in st.session_state:
+    # Configurar local inicial do mapa com base nas coordenadas médias das multas (dados completos, não filtrados)
+    if not data.empty and 'Latitude' in data.columns and 'Longitude' in data.columns:
+        avg_lat = data['Latitude'].mean()
+        avg_lon = data['Longitude'].mean()
+    else:
+        avg_lat, avg_lon = -23.5505, -46.6333  # Coordenadas padrão (São Paulo)
 
-m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
+    # Criar o mapa com localização média
+    m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
 
-# Ícone personalizado
-icon_url = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-icon_size = (30, 30)
+    # Ícone personalizado para os marcadores
+    icon_url = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
+    icon_size = (30, 30)
 
-# Adicionar marcadores ao mapa
-for _, row in filtered_data.iterrows():
-    if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
-        popup_content = f"""
-        <b>Local:</b> {row[12]}<br>
-        <b>Valor:</b> R$ {row[14]:,.2f}<br>
-        <b>Data da Infração:</b> {row[9].strftime('%d/%m/%Y') if pd.notnull(row[9]) else "Não disponível"}
-        """
-        marker_icon = CustomIcon(icon_url, icon_size=icon_size)
-        Marker(
-            location=[row['Latitude'], row['Longitude']],
-            popup=Popup(popup_content, max_width=300),
-            icon=marker_icon
-        ).add_to(m)
+    # Adicionar marcadores ao mapa usando dados completos (não filtrados)
+    for _, row in data.iterrows():
+        if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
+            popup_content = f"""
+            <b>Local:</b> {row[12]}<br>
+            <b>Valor:</b> R$ {row[14]:,.2f}<br>
+            <b>Data da Infração:</b> {row[9].strftime('%d/%m/%Y') if pd.notnull(row[9]) else "Não disponível"}
+            """
+            marker_icon = CustomIcon(icon_url, icon_size=icon_size)
+            Marker(
+                location=[row['Latitude'], row['Longitude']],
+                popup=Popup(popup_content, max_width=300),
+                icon=marker_icon
+            ).add_to(m)
 
-# Detalhes das multas para localização selecionada
-map_click_data = st_folium(m, width="100%", height=600)  # Captura os cliques no mapa
+    # Armazenar o mapa no session_state
+    st.session_state['map'] = m
+
+# Garantir que o mapa seja renderizado sem recarregar
+st_folium(st.session_state['map'], width="100%", height=600)
+
+# Captura de cliques no mapa para detalhamento
+map_click_data = st.session_state['map'] if 'map' in st.session_state else None
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
     lng = map_click_data["last_object_clicked"].get("lng")
+
     
     # Filtrar multas pela localização clicada
     selected_fines = filtered_data[
