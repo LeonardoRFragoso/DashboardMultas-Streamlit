@@ -349,6 +349,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Garantir que as colunas de Latitude e Longitude existam, mesmo se não forem preenchidas
+if 'Latitude' not in data.columns or 'Longitude' not in data.columns:
+    data['Latitude'] = np.nan
+    data['Longitude'] = np.nan
 
 # Armazenar o mapa no session state para evitar recarregamento
 if 'map' not in st.session_state:
