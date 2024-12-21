@@ -239,13 +239,12 @@ st.markdown(
 unique_fines = data.drop_duplicates(subset=['Auto de Infração'])  # Total geral de multas únicas
 filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
 
-# Verificar se o filtro de data foi alterado
-if (data_inicio == datetime(datetime.now().year, 1, 1)) and (data_fim == datetime.now()):
-    # Se o filtro estiver no padrão (ano inteiro), mostrar o total geral
-    total_multas = unique_fines['Auto de Infração'].nunique()
-    valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
-else:
-    # Se o filtro foi alterado, mostrar os valores filtrados
+# Inicializar com valores totais
+total_multas = unique_fines['Auto de Infração'].nunique()
+valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
+
+# Aplicar filtro de data apenas se o usuário modificar
+if (data_inicio != datetime(datetime.now().year, 1, 1)) or (data_fim != datetime.now()):
     total_multas = filtered_unique_fines['Auto de Infração'].nunique()
     valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
 
