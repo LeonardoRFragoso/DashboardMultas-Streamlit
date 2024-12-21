@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 
 def apply_filters(data):
-    with st.expander("Filtros", expanded=True):
+    with st.expander("Filtros", expanded=False):
         data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
         data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
         
