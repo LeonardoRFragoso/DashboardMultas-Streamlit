@@ -246,25 +246,24 @@ st.write("Filtro - Data de Início:", data_inicio)
 st.write("Filtro - Data Final:", data_fim)
 st.write("Comparação de Data Atual:", datetime(datetime.now().year, 1, 1).date(), datetime.now().date())
 
-# Converter para date() para garantir comparação correta
-if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == datetime.now().date():
-    # Se não houve alteração no filtro, mostrar o total geral
-    total_multas = unique_fines['Auto de Infração'].nunique()
-    valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
-    filtered_unique_fines = unique_fines  # Exibir os dados completos
-    st.write("Sem filtro aplicado - Exibindo total geral")
+# Determinar se o filtro é o padrão (01/01 do ano até hoje)
+is_default_filter = (
+    data_inicio == datetime(datetime.now().year, 1, 1).date() and 
+    data_fim == datetime.now().date()
+)
+
+if is_default_filter:
+    # Exibir os valores padrão ao recarregar a página
+    total_multas = TOTAL_MULTAS_PADRAO
+    valor_total_multas = VALOR_TOTAL_PADRAO
+    st.write("Sem filtro aplicado - Exibindo total padrão")
 else:
-    # Aplicar filtro de data se foi alterado
-    if filtered_data.empty:
-        st.write("Filtro aplicado, mas nenhum dado corresponde ao período selecionado.")
-        total_multas = 0
-        valor_total_multas = 0
-        filtered_unique_fines = pd.DataFrame(columns=['Auto de Infração', 'Valor a ser pago R$', 'Data da Infração'])
-    else:
-        filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
-        total_multas = filtered_unique_fines['Auto de Infração'].nunique()
-        valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
-        st.write("Filtro aplicado - Exibindo dados filtrados")
+    # Aplicar o filtro e recalcular os indicadores
+    filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
+    total_multas = filtered_unique_fines['Auto de Infração'].nunique()
+    valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
+    st.write("Filtro aplicado - Exibindo dados filtrados")
+
 
 # Depuração - Mostrar valores finais
 st.write("Total de Multas (após lógica):", total_multas)
