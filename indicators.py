@@ -62,11 +62,9 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     ano_atual = datetime.now().year
     mes_atual = data_fim.month if data_fim else datetime.now().month
 
-    # Ajuste do cálculo de Multas e Valor no Ano Atual
     multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][5].nunique() if 9 in unique_fines.columns else 0
     valor_multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][14].sum() if 14 in unique_fines.columns else 0
 
-    # Multas e Valor no Mês Atual
     multas_mes_atual = filtered_data[
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][5].nunique() if 9 in filtered_data.columns else 0
@@ -75,12 +73,15 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Ajuste da Data da Consulta
-    data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
-    data_formatada = (
-        data_consulta.strftime('%d/%m/%Y')
-        if isinstance(data_consulta, pd.Timestamp) else "N/A"
-    )
+    # Ajuste da Data da Consulta (linha 2, índice 0)
+    try:
+        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
+        data_formatada = (
+            data_consulta.strftime('%d/%m/%Y')
+            if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
+        )
+    except (IndexError, KeyError):
+        data_formatada = "N/A"  # Evita erro se não houver linha suficiente
 
     # Renderizar todos os indicadores com um único bloco de HTML
     indicadores_html = f"""
