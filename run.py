@@ -18,6 +18,7 @@ from folium.features import CustomIcon
 from streamlit_folium import st_folium
 from filters_module import apply_filters  # Importar o módulo de filtros
 
+
 CACHE_FILE = "coordinates_cache.json"
 
 def load_cache():
@@ -204,10 +205,11 @@ if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
 
-# Adicione esta linha aqui - cria uma cópia dos dados originais para o mapa
+# Criação de cópia dos dados para o mapa antes da filtragem
 map_data = data.copy()
+map_data = ensure_coordinates(map_data, cache, api_key)  # Garante que o mapa terá coordenadas
 
-# Aplique filtros apenas para gráficos e tabelas
+# Aplicar os filtros aos dados
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Ensure coordinates and cache
@@ -344,7 +346,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Configurar local inicial do mapa com base nas coordenadas médias das multas
 if not map_data.empty and 'Latitude' in map_data.columns and 'Longitude' in map_data.columns:
     avg_lat = map_data['Latitude'].mean()
     avg_lon = map_data['Longitude'].mean()
@@ -353,7 +354,7 @@ else:
 
 m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
 
-# Adicionar marcadores ao mapa (com base nos dados não filtrados)
+# Adicionar marcadores com base em todas as multas (não filtradas)
 for _, row in map_data.iterrows():
     if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
         popup_content = f"""
@@ -367,7 +368,6 @@ for _, row in map_data.iterrows():
         ).add_to(m)
 
 st_folium(m, width="100%", height=600)
-  # Captura os cliques no mapa
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
