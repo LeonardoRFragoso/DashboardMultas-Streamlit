@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from graph_geo_distribution import create_geo_distribution_map
-from geo_utils import get_cached_coordinates, initialize_cache
+from geo_utils import get_cached_coordinates, initialize_cache, get_coordinates_with_cache
 from graph_vehicles_fines import create_vehicle_fines_chart
 from graph_common_infractions import create_common_infractions_chart
 from graph_weekday_infractions import create_weekday_infractions_chart
@@ -50,6 +50,9 @@ def preprocess_data(file_buffer):
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
     return data
 
+cache = {}
+
+
 def ensure_coordinates(data, api_key):
     def get_coordinates_with_cache(location):
         if location not in cache:
@@ -63,6 +66,7 @@ def ensure_coordinates(data, api_key):
                 st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
                 cache[location] = (np.nan, np.nan)
         return cache[location]
+
     
     # Aplicar as coordenadas com garantia de formato correto
     coordinates = data['Local da Infração'].apply(lambda loc: get_coordinates_with_cache(loc))
