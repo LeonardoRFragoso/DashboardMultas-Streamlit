@@ -104,25 +104,28 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         "data_consulta": data_formatada
     }
 
-    # Renderizar HTML interativo com duplo clique
+    # Renderizar HTML interativo com clique (usando fetch)
     indicadores_html = "<div class='indicadores-container'>"
     for key, value in indicadores.items():
         selected_class = "selected" if st.session_state.clicked_indicator == key else ""
         indicadores_html += f"""
-        <div class="indicador {selected_class}" ondblclick="send('{key}')">
+        <div class="indicador {selected_class}" onclick="send('{key}')">
             <span>{key.replace('_', ' ').title()}</span>
             <p>{value}</p>
         </div>
         """
     indicadores_html += "</div>"
 
-    # Javascript para capturar o clique e enviar para Streamlit
+    # JavaScript para enviar evento de clique sem modificar URL
     indicadores_html += """
     <script>
         function send(indicator) {
-            const query = new URLSearchParams(window.location.search);
-            query.set('clicked_indicator', indicator);
-            window.location.search = query.toString();
+            fetch('/?clicked_indicator=' + indicator)
+            .then(response => {
+                if (response.ok) {
+                    console.log("Indicator sent: " + indicator);
+                }
+            });
         }
     </script>
     """
@@ -130,12 +133,12 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     # Renderizar HTML no Streamlit
     st.markdown(indicadores_html, unsafe_allow_html=True)
 
-    # Captura o parâmetro de URL para simular clique duplo
+    # Captura o clique diretamente
     clicked_indicator = st.experimental_get_query_params().get("clicked_indicator", [None])[0]
-
     if clicked_indicator:
         st.session_state.clicked_indicator = clicked_indicator
         st.session_state.click_count += 1
+        st.experimental_rerun()
 
     # Exibe tabela ao clicar duas vezes
     if st.session_state.click_count >= 2:
