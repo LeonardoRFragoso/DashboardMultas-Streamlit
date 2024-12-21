@@ -118,25 +118,25 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     }
 
     # Renderizar indicadores como blocos clicáveis (HTML)
-    st.markdown("<div class='indicadores-container'>", unsafe_allow_html=True)
+    indicadores_html = "<div class='indicadores-container'>"
     for key, value in indicadores.items():
-        # Checa se o indicador foi clicado
         selected_class = "selected" if st.session_state.clicked_indicator == key else ""
+        indicadores_html += f"""
+        <div class="indicador {selected_class}" onclick="send('{key}')">
+            <span>{key.replace('_', ' ').title()}</span>
+            <p>{value}</p>
+        </div>
+        """
+    indicadores_html += "</div>"
 
-        # Criação do bloco de indicador
-        if st.markdown(
-            f"""
-            <div class="indicador {selected_class}" onclick="send('{key}')">
-                <span>{key.replace('_', ' ').title()}</span>
-                <p>{value}</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        ):
+    # Renderizar os indicadores lado a lado
+    st.markdown(indicadores_html, unsafe_allow_html=True)
+
+    # Captura o clique sem JavaScript adicional
+    for key in indicadores.keys():
+        if st.button(key.replace('_', ' ').title()):
             st.session_state.clicked_indicator = key
             st.session_state.click_count += 1
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
     # Exibe tabela após 2 cliques
     if st.session_state.click_count >= 2:
