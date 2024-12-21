@@ -277,7 +277,7 @@ else:
     multas_ano_atual = 0
     valor_multas_ano_atual = 0
 
-# Multas no mês atual (filtradas)
+# Garantir que a filtragem do mês atual considere apenas multas únicas (como no script anterior)
 mes_atual = datetime.now().month
 if 9 in filtered_unique_fines.columns:
     multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][5].nunique()
