@@ -236,84 +236,82 @@ st.markdown(
 )
 
 # Indicadores principais com base no filtro de datas
-unique_fines = data.drop_duplicates(subset=[5])  # Coluna 'Auto de Infração' com índice 5
+unique_fines = data.drop_duplicates(subset=['Auto de Infração'])  # Total geral de multas únicas
 
 # Forçar exibição do total geral na inicialização
 if 'filtro_aplicado' not in st.session_state:
     st.session_state['filtro_aplicado'] = False
 
 if not st.session_state['filtro_aplicado']:
-    total_multas = unique_fines[5].nunique()
-    valor_total_multas = unique_fines[14].sum()
+    total_multas = unique_fines['Auto de Infração'].nunique()
+    valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
     filtered_unique_fines = unique_fines  # Exibir os dados completos
 else:
     # Converter para date() para garantir comparação correta
     if data_inicio == datetime(datetime.now().year, 1, 1).date() and data_fim == datetime.now().date():
-        total_multas = unique_fines[5].nunique()
-        valor_total_multas = unique_fines[14].sum()
+        total_multas = unique_fines['Auto de Infração'].nunique()
+        valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
         filtered_unique_fines = unique_fines
     else:
         if filtered_data.empty:
             total_multas = 0
             valor_total_multas = 0
-            filtered_unique_fines = pd.DataFrame(columns=[5, 14, 9])
+            filtered_unique_fines = pd.DataFrame(columns=['Auto de Infração', 'Valor a ser pago R$', 'Data da Infração'])
         else:
-            filtered_unique_fines = filtered_data.drop_duplicates(subset=[5])
-            total_multas = filtered_unique_fines[5].nunique()
-            valor_total_multas = filtered_unique_fines[14].sum()
+            filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
+            total_multas = filtered_unique_fines['Auto de Infração'].nunique()
+            valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
     st.session_state['filtro_aplicado'] = True
 
 # Calcular multas e valores do ano atual
 ano_atual = datetime.now().year
-filtered_data_ano_atual = data[data[9].dt.year == ano_atual].drop_duplicates(subset=[5])
+filtered_data_ano_atual = data[data['Data da Infração'].dt.year == ano_atual].drop_duplicates(subset=['Auto de Infração'])
 
-multas_ano_atual = filtered_data_ano_atual[5].nunique()
-valor_multas_ano_atual = filtered_data_ano_atual[14].sum()
-
+multas_ano_atual = filtered_data_ano_atual['Auto de Infração'].nunique()
+valor_multas_ano_atual = filtered_data_ano_atual['Valor a ser pago R$'].sum()
 
 # Multas no mês atual (filtradas)
 mes_atual = datetime.now().month
-multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][5].nunique()
-valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][14].sum()
+multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da Infração'].dt.month == mes_atual]['Auto de Infração'].nunique()
+valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da Infração'].dt.month == mes_atual]['Valor a ser pago R$'].sum()
 
 # Indicador 5: Data da Consulta (primeiro registro não filtrado)
 data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
 
 # Estrutura HTML para exibição dos indicadores
 indicadores_html = f"""
-<div class="indicadores-container">
-    <div class="indicador">
+<div class="indicadores-container" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px;">
+    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
         <span>Total de Multas</span>
-        <p>{total_multas}</p>
+        <p style="font-size: 32px;">{total_multas}</p>
     </div>
-    <div class="indicador">
+    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
         <span>Valor Total das Multas</span>
-        <p>R$ {valor_total_multas:,.2f}</p>
+        <p style="font-size: 32px;">R$ {valor_total_multas:,.2f}</p>
     </div>
-    <div class="indicador">
+    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
         <span>Multas no Ano Atual</span>
-        <p>{multas_ano_atual}</p>
+        <p style="font-size: 32px;">{multas_ano_atual}</p>
     </div>
-    <div class="indicador">
+    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
         <span>Valor Total Multas no Ano Atual</span>
-        <p>R$ {valor_multas_ano_atual:,.2f}</p>
+        <p style="font-size: 32px;">R$ {valor_multas_ano_atual:,.2f}</p>
     </div>
-    <div class="indicador">
+    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
         <span>Multas no Mês Atual</span>
-        <p>{multas_mes_atual}</p>
+        <p style="font-size: 32px;">{multas_mes_atual}</p>
     </div>
-    <div class="indicador">
+    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
         <span>Valor das Multas no Mês Atual</span>
-        <p>R$ {valor_multas_mes_atual:,.2f}</p>
+        <p style="font-size: 32px;">R$ {valor_multas_mes_atual:,.2f}</p>
     </div>
-    <div class="indicador">
+    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
         <span>Data da Consulta</span>
-        <p>{data_consulta}</p>
+        <p style="font-size: 32px;">{data_consulta}</p>
     </div>
 </div>
 """
 st.markdown(indicadores_html, unsafe_allow_html=True)
-
 
 st.markdown(
     """
