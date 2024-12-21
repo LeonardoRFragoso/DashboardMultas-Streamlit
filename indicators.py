@@ -12,7 +12,7 @@ def render_css():
                 gap: 30px;
                 margin-top: 30px;
                 flex-wrap: wrap;
-                max-width: 1200px;
+                max-width: 1400px;
                 margin-left: auto;
                 margin-right: auto;
             }
@@ -70,6 +70,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
+    # Card de Data da Consulta
+    data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
+    data_formatada = data_consulta.strftime('%d/%m/%Y') if isinstance(data_consulta, pd.Timestamp) else "N/A"
+
     # Renderizar todos os indicadores com um único bloco de HTML
     indicadores_html = f"""
     <div class="indicadores-container">
@@ -96,6 +100,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         <div class="indicador">
             <span>Valor das Multas no Mês Atual</span>
             <p>R$ {valor_multas_mes_atual:,.2f}</p>
+        </div>
+        <div class="indicador">
+            <span>Data da Consulta</span>
+            <p>{data_formatada}</p>
         </div>
     </div>
     """
