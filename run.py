@@ -47,7 +47,6 @@ def download_file_from_drive(file_id, credentials_info):
     file_buffer.seek(0)
     return file_buffer
 
-
 def preprocess_data(file_buffer):
     """Preprocess the data from the file buffer."""
     data = pd.read_excel(file_buffer)
@@ -66,7 +65,6 @@ def preprocess_data(file_buffer):
     data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
 
     return data
-
 
 def ensure_coordinates(data, cache, api_key):
     """Ensure Latitude and Longitude columns are populated once."""
@@ -96,6 +94,121 @@ try:
     api_key = st.secrets["general"]["API_KEY"]
 except KeyError as e:
     st.error(f"Erro ao carregar os segredos: {e}")
+    st.stop()
+
+# Streamlit setup
+st.set_page_config(page_title="Multas Dashboard", layout="wide")
+
+# CSS Styling
+st.markdown(
+    """
+    <style>
+        .titulo-dashboard-container {
+            display: flex;
+            flex-direction: column; /* Alinha os itens na vertical */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin: 0 auto;
+            padding: 25px 20px;
+            background: linear-gradient(to right, #F37529, rgba(255, 255, 255, 0.8));
+            border-radius: 15px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+        }
+        .titulo-dashboard {
+            font-size: 50px;
+            font-weight: bold;
+            color: #F37529;
+            text-transform: uppercase;
+            margin: 0;
+        }
+        .subtitulo-dashboard {
+            font-size: 18px; /* Tamanho da fonte do subtítulo */
+            color: #555555; /* Cor do subtítulo */
+            margin: 10px 0 0 0; /* Espaçamento acima do subtítulo */
+        }
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-container img {
+            max-width: 200px;
+            height: auto;
+        }
+        .indicadores-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        .indicador {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: #FFFFFF;
+            border: 4px solid #0066B4;
+            border-radius: 15px;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+            width: 260px;
+            height: 160px;
+            padding: 10px;
+        }
+        .indicador span {
+            font-size: 18px;
+            color: #0066B4;
+        }
+        .indicador p {
+            font-size: 38px;
+            color: #0066B4;
+            margin: 0;
+            font-weight: bold;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Logo
+st.markdown(
+    f"""
+    <div class="logo-container">
+        <img src="{st.secrets['image']['logo_url']}" alt="Logo da Empresa">
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Logo and Header
+st.markdown(
+    f"""
+    <div class="titulo-dashboard-container">
+        <h1 class="titulo-dashboard">Torre de Controle Itracker - Dashboard de Multas</h1>
+        <p class="subtitulo-dashboard">Monitorando em tempo real as consultas de multas no DETRAN-RJ</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Load and preprocess data
+st.info("Carregando dados do Google Drive...")
+file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
+data = preprocess_data(file_buffer)
+
+if data.empty:
+    st.error("Os dados carregados estão vazios. Verifique o arquivo de origem.")
+    st.stop()
+
+# Ensure required columns
+required_columns = [1, 5, 12, 14, 9]
+missing_columns = [col for col in required_columns if col not in data.columns]
+if missing_columns:
+    st.error(f"As seguintes colunas estão ausentes: {missing_columns}")
     st.stop()
 
 # Streamlit setup
