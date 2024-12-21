@@ -155,35 +155,33 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+st.markdown(
+    f"""
+    <div class="logo-container">
+        <img src="{st.secrets['image']['logo_url']}" alt="Logo da Empresa">
+    </div>
+    <div class="titulo-dashboard-container">
+        <h1 class="titulo-dashboard">Torre de Controle Itracker - Dashboard de Multas</h1>
+        <p class="subtitulo-dashboard">Monitorando em tempo real as consultas de multas no DETRAN-RJ</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+with st.expander("Filtros", expanded=False):
+    data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
+    data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
+    codigo_infracao = st.selectbox("Código da Infração", options=["Todos"] + list(data[8].unique()))
+    descricao_infracao = st.selectbox("Descrição da Infração", options=["Todas"] + list(data[11].unique()))
+    placa = st.selectbox("Placa", options=["Todas"] + list(data[1].unique()))
+    valor_min, valor_max = st.slider("Valor das Multas", float(data[14].min()), float(data[14].max()), (float(data[14].min()), float(data[14].max())))
+
 file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
 data = preprocess_data(file_buffer)
 
 if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
-
-required_columns = [1, 5, 8, 11, 12, 14, 9]
-missing_columns = [col for col in required_columns if col not in data.columns]
-if missing_columns:
-    st.error(f"As colunas estão ausentes: {missing_columns}")
-    st.stop()
-
-with st.expander("Filtros", expanded=False):
-    data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
-    data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
-
-    codigo_infracao = st.selectbox("Código da Infração", options=["Todos"] + list(data[8].unique()))
-    descricao_infracao = st.selectbox("Descrição da Infração", options=["Todas"] + list(data[11].unique()))
-    placa = st.selectbox("Placa", options=["Todas"] + list(data[1].unique()))
-    valor_min, valor_max = st.slider("Valor das Multas", float(data[14].min()), float(data[14].max()), (float(data[14].min()), float(data[14].max())))
-
-filtered_data = data[
-    (data[9] >= pd.Timestamp(data_inicio)) &
-    (data[9] <= pd.Timestamp(data_fim)) &
-    (data[14] >= valor_min) &
-    (data[14] <= valor_max)
-]
-
 
 # Logo
 st.markdown(
