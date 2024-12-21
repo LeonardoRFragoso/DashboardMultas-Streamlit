@@ -280,34 +280,34 @@ data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
 
 # Estrutura HTML para exibição dos indicadores
 indicadores_html = f"""
-<div class="indicadores-container" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px;">
-    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
+<div class="indicadores-container" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <span>Total de Multas</span>
-        <p style="font-size: 32px;">{total_multas}</p>
+        <p style="font-size: 28px; margin: 5px 0;">{total_multas}</p>
     </div>
-    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <span>Valor Total das Multas</span>
-        <p style="font-size: 32px;">R$ {valor_total_multas:,.2f}</p>
+        <p style="font-size: 28px; margin: 5px 0;">R$ {valor_total_multas:,.2f}</p>
     </div>
-    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <span>Multas no Ano Atual</span>
-        <p style="font-size: 32px;">{multas_ano_atual}</p>
+        <p style="font-size: 28px; margin: 5px 0;">{multas_ano_atual}</p>
     </div>
-    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <span>Valor Total Multas no Ano Atual</span>
-        <p style="font-size: 32px;">R$ {valor_multas_ano_atual:,.2f}</p>
+        <p style="font-size: 28px; margin: 5px 0;">R$ {valor_multas_ano_atual:,.2f}</p>
     </div>
-    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <span>Multas no Mês Atual</span>
-        <p style="font-size: 32px;">{multas_mes_atual}</p>
+        <p style="font-size: 28px; margin: 5px 0;">{multas_mes_atual}</p>
     </div>
-    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <span>Valor das Multas no Mês Atual</span>
-        <p style="font-size: 32px;">R$ {valor_multas_mes_atual:,.2f}</p>
+        <p style="font-size: 28px; margin: 5px 0;">R$ {valor_multas_mes_atual:,.2f}</p>
     </div>
-    <div class="indicador" style="font-size: 14px; width: 200px; height: 140px; padding: 15px;">
+    <div class="indicador" style="font-size: 12px; width: 180px; height: 120px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <span>Data da Consulta</span>
-        <p style="font-size: 32px;">{data_consulta}</p>
+        <p style="font-size: 28px; margin: 5px 0;">{data_consulta}</p>
     </div>
 </div>
 """
