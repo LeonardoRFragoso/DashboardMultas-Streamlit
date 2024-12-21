@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# Função para aplicar o CSS
 def render_css():
     st.markdown(
         """
@@ -48,44 +47,27 @@ def render_css():
         unsafe_allow_html=True,
     )
 
-# Função para renderizar indicadores
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
-    if 5 in data.columns:
-        unique_fines = data.drop_duplicates(subset=[5])
-    else:
-        st.error("A coluna com índice 5 não foi encontrada nos dados.")
-        unique_fines = pd.DataFrame(columns=[5, 14, 9])
-
-    # Cálculos dos indicadores
-    total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
-    valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
+    total_multas = data[5].nunique() if 5 in data.columns else 0
+    valor_total_multas = data[14].sum() if 14 in data.columns else 0
     ano_atual = datetime.now().year
-    mes_atual = data_fim.month if data_fim else datetime.now().month
-
-    multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][5].nunique() if 9 in unique_fines.columns else 0
-    valor_multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][14].sum() if 14 in unique_fines.columns else 0
-
-    multas_mes_atual = filtered_data[
-        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
-    ][5].nunique() if 9 in filtered_data.columns else 0
-
-    valor_multas_mes_atual = filtered_data[
-        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
-    ][14].sum() if 14 in filtered_data.columns else 0
-
-    # Ajuste da Data da Consulta (linha 2, índice 0)
+    multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][5].nunique() if 9 in filtered_data.columns else 0
+    valor_multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][14].sum() if 14 in filtered_data.columns else 0
+    multas_mes_atual = filtered_data[(filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == datetime.now().month)][5].nunique() if 9 in filtered_data.columns else 0
+    valor_multas_mes_atual = filtered_data[(filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == datetime.now().month)][14].sum() if 14 in filtered_data.columns else 0
+    
     try:
-        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
+        data_consulta = data.iloc[1, 0]  
         data_formatada = (
             data_consulta.strftime('%d/%m/%Y')
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
         )
-    except (IndexError, KeyError):
+    except:
         data_formatada = "N/A"
 
-    # Renderizar todos os indicadores com HTML interativo
+    # Renderizar Indicadores em HTML
     indicadores_html = f"""
     <div class="indicadores-container">
         <div class="indicador" data-id="total_multas">
@@ -117,16 +99,49 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
             <p>{data_formatada}</p>
         </div>
     </div>
-    
+
     <script>
         const indicadores = document.querySelectorAll('.indicador');
         indicadores.forEach(indicador => {{
             indicador.addEventListener('dblclick', function() {{
-                const indicatorId = this.getAttribute('data-id');
-                fetch(`/abrir_planilha?id=${{indicatorId}}`);
+                const indicadorID = this.getAttribute('data-id');
+                const message = {{'indicador': indicadorID}};
+                window.parent.postMessage(message, "*");
             }});
         }});
     </script>
     """
 
     st.markdown(indicadores_html, unsafe_allow_html=True)
+
+    # Verifica o ID do Indicador clicado
+    msg = st.experimental_get_query_params().get('indicador')
+    if msg:
+        exibir_detalhes_tabela(msg[0], data, filtered_data)
+
+# Exibir Tabela de Detalhes
+def exibir_detalhes_tabela(indicador_id, data, filtered_data):
+    st.markdown(f"### Detalhes: {indicador_id.replace('_', ' ').title()}")
+    
+    if indicador_id == "total_multas":
+        tabela = data.drop_duplicates(subset=[5])  # Multas únicas
+    elif indicador_id == "valor_total":
+        tabela = data[[5, 14, 12, 9]].drop_duplicates(subset=[5])  # Valor total por infração
+    elif indicador_id == "multas_ano":
+        tabela = filtered_data[filtered_data[9].dt.year == datetime.now().year]
+    elif indicador_id == "valor_ano":
+        tabela = filtered_data[filtered_data[9].dt.year == datetime.now().year]
+    elif indicador_id == "multas_mes":
+        tabela = filtered_data[
+            (filtered_data[9].dt.year == datetime.now().year) & 
+            (filtered_data[9].dt.month == datetime.now().month)
+        ]
+    elif indicador_id == "valor_mes":
+        tabela = filtered_data[
+            (filtered_data[9].dt.year == datetime.now().year) & 
+            (filtered_data[9].dt.month == datetime.now().month)
+        ]
+    else:
+        tabela = pd.DataFrame(columns=["Nenhum dado encontrado."])
+
+    st.dataframe(tabela.reset_index(drop=True))
