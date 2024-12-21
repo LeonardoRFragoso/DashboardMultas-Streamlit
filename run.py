@@ -18,6 +18,7 @@ from folium.features import CustomIcon
 from streamlit_folium import st_folium
 from filters_module import apply_filters  # Importar o módulo de filtros
 
+
 CACHE_FILE = "coordinates_cache.json"
 
 def load_cache():
@@ -204,6 +205,10 @@ if data.empty:
     st.error("Os dados carregados estão vazios.")
     st.stop()
 
+# Criação de cópia dos dados para o mapa antes da filtragem
+map_data = data.copy()
+
+# Aplicar os filtros aos dados
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Ensure coordinates and cache
@@ -322,6 +327,7 @@ indicadores_html = f"""
 st.markdown(indicadores_html, unsafe_allow_html=True)
 
 
+# Exibição do mapa com todas as multas
 st.markdown(
     """
     <h2 style="
@@ -339,37 +345,28 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-# Configurar local inicial do mapa com base nas coordenadas médias das multas
-if not filtered_data.empty and 'Latitude' in filtered_data.columns and 'Longitude' in filtered_data.columns:
-    avg_lat = filtered_data['Latitude'].mean()
-    avg_lon = filtered_data['Longitude'].mean()
+if not map_data.empty and 'Latitude' in map_data.columns and 'Longitude' in map_data.columns:
+    avg_lat = map_data['Latitude'].mean()
+    avg_lon = map_data['Longitude'].mean()
 else:
     avg_lat, avg_lon = -23.5505, -46.6333  # Coordenadas padrão (São Paulo)
 
 m = Map(location=[avg_lat, avg_lon], zoom_start=8, tiles="CartoDB dark_matter")
 
-# Ícone personalizado
-icon_url = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-icon_size = (30, 30)
-
-# Adicionar marcadores ao mapa
-for _, row in filtered_data.iterrows():
+# Adicionar marcadores com base em todas as multas (não filtradas)
+for _, row in map_data.iterrows():
     if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']):
         popup_content = f"""
         <b>Local:</b> {row[12]}<br>
         <b>Valor:</b> R$ {row[14]:,.2f}<br>
         <b>Data da Infração:</b> {row[9].strftime('%d/%m/%Y') if pd.notnull(row[9]) else "Não disponível"}
         """
-        marker_icon = CustomIcon(icon_url, icon_size=icon_size)
         Marker(
             location=[row['Latitude'], row['Longitude']],
-            popup=Popup(popup_content, max_width=300),
-            icon=marker_icon
+            popup=Popup(popup_content, max_width=300)
         ).add_to(m)
 
-# Detalhes das multas para localização selecionada
-map_click_data = st_folium(m, width="100%", height=600)  # Captura os cliques no mapa
+st_folium(m, width="100%", height=600)
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
