@@ -236,26 +236,26 @@ st.markdown(
 )
 
 # Indicadores principais com base no filtro de datas
-unique_fines = data.drop_duplicates(subset=[5])  # Total geral de multas únicas
+unique_fines = data.drop_duplicates(subset=['Auto de Infração'])  # Total geral de multas únicas
+filtered_unique_fines = filtered_data.drop_duplicates(subset=['Auto de Infração'])
 
 # Verificar se o filtro de data foi alterado
 if (data_inicio == datetime(datetime.now().year, 1, 1)) and (data_fim == datetime.now()):
     # Se o filtro estiver no padrão (ano inteiro), mostrar o total geral
-    total_multas = unique_fines[5].nunique()
-    valor_total_multas = unique_fines[14].sum()
+    total_multas = unique_fines['Auto de Infração'].nunique()
+    valor_total_multas = unique_fines['Valor a ser pago R$'].sum()
 else:
     # Se o filtro foi alterado, mostrar os valores filtrados
-    filtered_unique_fines = filtered_data.drop_duplicates(subset=[5])
-    total_multas = filtered_unique_fines[5].nunique()
-    valor_total_multas = filtered_unique_fines[14].sum()
+    total_multas = filtered_unique_fines['Auto de Infração'].nunique()
+    valor_total_multas = filtered_unique_fines['Valor a ser pago R$'].sum()
 
 # Multas no mês atual (filtradas)
 mes_atual = datetime.now().month
-multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][5].nunique()
-valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines[9].dt.month == mes_atual][14].sum()
+multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da Infração'].dt.month == mes_atual]['Auto de Infração'].nunique()
+valor_multas_mes_atual = filtered_unique_fines[filtered_unique_fines['Data da Infração'].dt.month == mes_atual]['Valor a ser pago R$'].sum()
 
 # Indicador 5: Data da Consulta (primeiro registro filtrado)
-data_consulta = filtered_data.iloc[0, 0] if not filtered_data.empty else "N/A"
+data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
 
 # Estrutura HTML para exibição dos indicadores
 indicadores_html = f"""
