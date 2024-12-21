@@ -52,20 +52,17 @@ def preprocess_data(file_buffer):
 
 def ensure_coordinates(data, api_key):
     def get_coordinates_with_cache(location):
-        lat, lng = get_cached_coordinates(location, api_key)
-        if lat is None or lng is None:
-            return [float('nan'), float('nan')]
-        return [lat, lng]
-
-    # Aplica as coordenadas usando a função de cache
-    coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
-
-    if coordinates.shape[1] == 2:
-        data[['Latitude', 'Longitude']] = coordinates
-    else:
-        st.error("Erro ao carregar coordenadas. As colunas 'Latitude' e 'Longitude' não possuem o mesmo comprimento.")
-
-    return data
+    if location not in cache:
+        try:
+            lat, lng = get_cached_coordinates(location, api_key, cache)
+            if lat is not None and lng is not None:
+                cache[location] = (lat, lng)
+            else:
+                cache[location] = (np.nan, np.nan)
+        except Exception as e:
+            st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
+            cache[location] = (np.nan, np.nan)
+    return cache[location]
 
 try:
     drive_credentials = json.loads(st.secrets["general"]["CREDENTIALS"])
@@ -205,7 +202,8 @@ if data.empty:
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Garantir coordenadas com cache
-filtered_data = ensure_coordinates(filtered_data, api_key)
+coordinates = filtered_data['Local da Infração'].apply(lambda loc: get_coordinates_with_cache(loc))
+filtered_data[['Latitude', 'Longitude']] = pd.DataFrame(coordinates.tolist(), index=filtered_data.index)
 
 st.markdown(
     """
