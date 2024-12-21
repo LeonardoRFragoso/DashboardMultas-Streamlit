@@ -85,6 +85,34 @@ st.set_page_config(page_title="Multas Dashboard", layout="wide")
 st.markdown(
     """
     <style>
+        .filter-expander {
+            border: 2px solid #F37529;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+        [data-testid="stExpander"] > summary {
+            font-weight: 600;
+            font-size: 16px;
+            color: #F37529;
+            padding: 12px;
+            cursor: pointer;
+        }
+        .filtro-alerta {
+            text-align: center;
+            color: #F37529;
+            font-size: 15px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <style>
         .titulo-dashboard-container {
             display: flex;
             flex-direction: column;

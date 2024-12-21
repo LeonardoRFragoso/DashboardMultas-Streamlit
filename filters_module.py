@@ -11,17 +11,28 @@ def apply_filters(data):
                 border: 2px solid #F37529;
                 border-radius: 10px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease;
+                margin-bottom: 20px;
+            }
+            [data-testid="stExpander"] > summary:hover {
+                background-color: rgba(243, 117, 41, 0.1);
+                cursor: pointer;
             }
             [data-testid="stExpander"] > summary {
                 font-weight: bold;
                 font-size: 16px;
                 color: #F37529;
+                padding: 12px;
             }
             .filtro-alerta {
                 text-align: center;
                 color: #F37529;
+                background-color: rgba(243, 117, 41, 0.05);
+                padding: 8px;
+                border-radius: 8px;
                 font-size: 14px;
-                margin-bottom: 10px;
+                margin: 15px 0;
+                font-weight: 500;
             }
         </style>
         """,
@@ -29,9 +40,11 @@ def apply_filters(data):
     )
     
     # Alerta sutil para indicar que os filtros estão disponíveis
-    st.markdown('<div class="filtro-alerta">🔍 Use os filtros abaixo para refinar os resultados.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="filtro-alerta">🔍 Utilize os filtros abaixo para refinar os resultados de forma mais precisa.</div>', unsafe_allow_html=True)
 
     with st.expander("🔧 Filtros para Refinamento de Dados", expanded=False):
+        st.markdown('<p class="filtro-alerta">Ajuste os filtros para uma análise detalhada das multas.</p>', unsafe_allow_html=True)
+        
         data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
         data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
         
