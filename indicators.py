@@ -29,7 +29,7 @@ def render_css():
                 transition: transform 0.2s ease-in-out;
                 width: 190px;
                 height: 130px;
-                user-select: none;  /* Evita seleção de texto */
+                user-select: none;
             }
             .indicador:hover {
                 transform: scale(1.05);
@@ -43,11 +43,6 @@ def render_css():
                 color: #0066B4;
                 margin: 0;
                 font-weight: bold;
-            }
-            .invisible-button {
-                position: absolute;
-                opacity: 0;
-                height: 0;
             }
         </style>
         """,
@@ -89,24 +84,47 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.session_state.selected_indicator = None
 
     # Renderiza Indicadores
-    cols = st.columns(7)
     indicadores_keys = list(indicadores.keys())
     
-    for i, col in enumerate(cols):
-        with col:
-            # Botão invisível para capturar clique
-            st.button(" ", key=f"btn_{i}", on_click=selecionar_indicador, args=(indicadores_keys[i],))
+    st.markdown("<div class='indicadores-container'>", unsafe_allow_html=True)
+    for i, key in enumerate(indicadores_keys):
+        # Adiciona um id único ao card para capturar o clique com JS
+        st.markdown(
+            f"""
+            <div class="indicador" id="{key}" ondblclick="doubleClick('{key}')">
+                <span>{key.replace('_', ' ').title()}</span>
+                <p>{indicadores[key]}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-            # Renderizar o card com HTML
-            st.markdown(
-                f"""
-                <div class="indicador" ondblclick="document.getElementById('btn_{i}').click()">
-                    <span>{indicadores_keys[i].replace('_', ' ').title()}</span>
-                    <p>{indicadores[indicadores_keys[i]]}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    # Script JS para capturar o clique duplo nos cards
+    st.markdown(
+        """
+        <script>
+            function doubleClick(indicador) {
+                const msg = JSON.stringify({indicador: indicador});
+                const event = new MessageEvent("streamlit:custom_event", {
+                    data: { eventType: "card_click", payload: msg }
+                });
+                window.dispatchEvent(event);
+            }
+
+            window.addEventListener("streamlit:custom_event", (event) => {
+                const payload = JSON.parse(event.data.payload);
+                const indicador = payload.indicador;
+
+                // Enviar para o Streamlit
+                fetch(`/message?indicador=${indicador}`, {
+                    method: "POST",
+                });
+            });
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # Exibe tabela se um indicador for clicado duas vezes
     if st.session_state.selected_indicator:
