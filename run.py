@@ -419,6 +419,7 @@ indicadores_html = f"""
 st.markdown(indicadores_html, unsafe_allow_html=True)
 
 
+
 st.markdown(
     """
     <h2 style="
