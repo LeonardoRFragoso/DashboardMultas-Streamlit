@@ -9,7 +9,7 @@ def render_css():
         <style>
             .indicadores-container {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                grid-template-columns: repeat(7, 1fr); /* Garantir 7 colunas */
                 justify-content: center;
                 gap: 20px;
                 margin-top: 30px;
@@ -27,9 +27,9 @@ def render_css():
                 padding: 20px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
-                width: 190px;
+                width: 180px;
                 height: 130px;
-                user-select: none;  /* Evita seleção de texto */
+                user-select: none;
             }
             .indicador:hover {
                 transform: scale(1.05);
@@ -43,11 +43,6 @@ def render_css():
                 color: #0066B4;
                 margin: 0;
                 font-weight: bold;
-            }
-            .invisible-button {
-                position: absolute;
-                opacity: 0;
-                height: 0;
             }
         </style>
         """,
@@ -89,40 +84,36 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.session_state.selected_indicator = None
 
     # Renderiza Indicadores
-    cols = st.columns(7)
     indicadores_keys = list(indicadores.keys())
     
-    for i, col in enumerate(cols):
-        with col:
-            # Botão invisível para capturar clique
-            st.button(" ", key=f"btn_{i}", on_click=selecionar_indicador, args=(indicadores_keys[i],))
+    st.markdown("<div class='indicadores-container'>", unsafe_allow_html=True)
+    for i, key in enumerate(indicadores_keys):
+        if st.button(f"{key.replace('_', ' ').title()}", key=f"btn_{key}"):
+            if st.session_state.selected_indicator == key:
+                st.session_state.selected_indicator = None
+            else:
+                st.session_state.selected_indicator = key
+        
+        # Renderizar o card
+        st.markdown(
+            f"""
+            <div class="indicador">
+                <span>{key.replace('_', ' ').title()}</span>
+                <p>{indicadores[key]}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-            # Renderizar o card com HTML
-            st.markdown(
-                f"""
-                <div class="indicador" ondblclick="document.getElementById('btn_{i}').click()">
-                    <span>{indicadores_keys[i].replace('_', ' ').title()}</span>
-                    <p>{indicadores[indicadores_keys[i]]}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    # Exibe tabela se um indicador for clicado duas vezes
+    # Exibe tabela se um indicador for clicado
     if st.session_state.selected_indicator:
         exibir_tabela(st.session_state.selected_indicator, data, filtered_data)
-
-# Função para selecionar o indicador clicado
-def selecionar_indicador(indicador):
-    if st.session_state.selected_indicator == indicador:
-        st.session_state.selected_indicator = None
-    else:
-        st.session_state.selected_indicator = indicador
 
 # Função para exibir tabela ao clicar duas vezes em um indicador
 def exibir_tabela(indicador_id, data, filtered_data):
     st.markdown(f"### Detalhes: {indicador_id.replace('_', ' ').title()}")
-
+    
     if indicador_id == "total_multas":
         tabela = data.drop_duplicates(subset=[5])  # Exibe todas as multas únicas
     elif indicador_id == "valor_total":
