@@ -57,7 +57,7 @@ def create_weekday_infractions_chart(data):
         xaxis_title="",
         yaxis_title="Quantidade de Multas",
         template="plotly_white",  # Tema claro
-        uniformtext_minsize=8,
+        uniformtext_minsize=16,
         uniformtext_mode='hide'  # Evita sobreposição de textos
     )
 
