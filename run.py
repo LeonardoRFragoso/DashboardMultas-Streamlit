@@ -52,17 +52,24 @@ def preprocess_data(file_buffer):
 
 def ensure_coordinates(data, api_key):
     def get_coordinates_with_cache(location):
-    if location not in cache:
-        try:
-            lat, lng = get_cached_coordinates(location, api_key, cache)
-            if lat is not None and lng is not None:
-                cache[location] = (lat, lng)
-            else:
+        if location not in cache:
+            try:
+                lat, lng = get_cached_coordinates(location, api_key, cache)
+                if lat is not None and lng is not None:
+                    cache[location] = (lat, lng)
+                else:
+                    cache[location] = (np.nan, np.nan)
+            except Exception as e:
+                st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
                 cache[location] = (np.nan, np.nan)
-        except Exception as e:
-            st.warning(f"Erro ao obter coordenadas para '{location}': {e}")
-            cache[location] = (np.nan, np.nan)
-    return cache[location]
+        return cache[location]
+    
+    # Aplicar as coordenadas com garantia de formato correto
+    coordinates = data['Local da Infração'].apply(lambda loc: get_coordinates_with_cache(loc))
+    data[['Latitude', 'Longitude']] = pd.DataFrame(coordinates.tolist(), index=data.index)
+
+    return data
+
 
 try:
     drive_credentials = json.loads(st.secrets["general"]["CREDENTIALS"])
