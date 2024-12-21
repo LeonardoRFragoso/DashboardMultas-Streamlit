@@ -209,8 +209,12 @@ if data.empty:
 filtered_data, data_inicio, data_fim = apply_filters(data)
 
 # Garantir coordenadas com cache
-coordinates = filtered_data['Local da Infração'].apply(lambda loc: get_coordinates_with_cache(loc))
-filtered_data[['Latitude', 'Longitude']] = pd.DataFrame(coordinates.tolist(), index=filtered_data.index)
+if 12 in filtered_data.columns:
+    coordinates = filtered_data[12].apply(lambda loc: get_coordinates_with_cache(loc))
+    filtered_data[['Latitude', 'Longitude']] = pd.DataFrame(coordinates.tolist(), index=filtered_data.index)
+else:
+    st.warning("A coluna de Local da Infração (índice 12) não foi encontrada.")
+
 
 st.markdown(
     """
