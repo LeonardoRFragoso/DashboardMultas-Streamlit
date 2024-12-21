@@ -77,15 +77,18 @@ except KeyError as e:
 
 st.set_page_config(page_title="Multas Dashboard", layout="wide")
 
+# UI e estilo original completo
 st.markdown(
     """
     <style>
+        /* Estilização para o expander (filtros) */
         .filter-expander {
             border: 2px solid #F37529;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             margin: 20px 0;
         }
+
         [data-testid="stExpander"] > summary {
             font-weight: 600;
             font-size: 16px;
@@ -93,6 +96,8 @@ st.markdown(
             padding: 12px;
             cursor: pointer;
         }
+
+        /* Alerta sutil para uso de filtros */
         .filtro-alerta {
             text-align: center;
             color: #F37529;
@@ -100,14 +105,8 @@ st.markdown(
             margin-bottom: 15px;
             font-weight: 500;
         }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
-st.markdown(
-    """
-    <style>
+        /* Container e estilo do título principal */
         .titulo-dashboard-container {
             display: flex;
             flex-direction: column;
@@ -120,6 +119,7 @@ st.markdown(
             border-radius: 15px;
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
+
         .titulo-dashboard {
             font-size: 50px;
             font-weight: bold;
@@ -127,11 +127,14 @@ st.markdown(
             text-transform: uppercase;
             margin: 0;
         }
+
         .subtitulo-dashboard {
             font-size: 18px;
             color: #555555;
             margin: 10px 0 0 0;
         }
+
+        /* Estilização do container do logo */
         .logo-container {
             display: flex;
             justify-content: center;
@@ -139,40 +142,10 @@ st.markdown(
             text-align: center;
             margin-bottom: 20px;
         }
+
         .logo-container img {
             max-width: 200px;
             height: auto;
-        }
-        .indicadores-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            margin-top: 30px;
-        }
-        .indicador {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            background-color: #FFFFFF;
-            border: 4px solid #0066B4;
-            border-radius: 15px;
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
-            width: 260px;
-            height: 160px;
-            padding: 10px;
-        }
-        .indicador span {
-            font-size: 18px;
-            color: #0066B4;
-        }
-        .indicador p {
-            font-size: 38px;
-            color: #0066B4;
-            margin: 0;
-            font-weight: bold;
         }
     </style>
     """,
