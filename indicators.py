@@ -20,6 +20,7 @@ def render_css():
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
+                position: relative;
             }
             .indicador:hover {
                 transform: scale(1.05);
@@ -34,9 +35,6 @@ def render_css():
                 margin: 0;
                 font-weight: bold;
             }
-            .selected {
-                border: 4px solid red !important;
-            }
             .hidden-button {
                 opacity: 0;
                 height: 100%;
@@ -46,9 +44,8 @@ def render_css():
                 top: 0;
                 cursor: pointer;
             }
-            .indicador-container {
-                position: relative;
-                display: inline-block;
+            .selected {
+                border: 4px solid red !important;
             }
         </style>
         """,
@@ -108,7 +105,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     # Inicializa o estado do indicador clicado
     if 'clicked_indicator' not in st.session_state:
         st.session_state.clicked_indicator = None
-        st.session_state.click_count = 0
 
     # Dicionário de indicadores
     indicadores = {
@@ -132,25 +128,18 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
             # Div principal do card
             st.markdown(
                 f"""
-                <div class="indicador-container">
-                    <div class="indicador {selected_class}">
-                        <span>{key.replace('_', ' ').title()}</span>
-                        <p>{value}</p>
-                    </div>
-                    <form method="post">
-                        <button class="hidden-button" type="submit" name="clicked_indicator" value="{key}"></button>
-                    </form>
+                <div class="indicador {selected_class}">
+                    <span>{key.replace('_', ' ').title()}</span>
+                    <p>{value}</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            # Captura o clique diretamente via `request`
-            if st.session_state.get("clicked_indicator") == key:
+            # Botão invisível que cobre o card
+            if st.button(" ", key=f"btn_{key}"):
                 st.session_state.clicked_indicator = key
-                st.session_state.click_count += 1
 
-    # Exibe tabela após 2 cliques
-    if st.session_state.click_count >= 2:
+    # Exibe tabela após o clique
+    if st.session_state.clicked_indicator:
         exibir_tabela(st.session_state.clicked_indicator, data, filtered_data)
-        st.session_state.click_count = 0
