@@ -208,7 +208,7 @@ if missing_columns:
 
 # Filters
 data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
-data_fim = st.date_input("Data Final", value=datetime.now())
+data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
 filtered_data = data[
     (data[9] >= pd.Timestamp(data_inicio)) & 
     (data[9] <= pd.Timestamp(data_fim))
