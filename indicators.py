@@ -7,15 +7,16 @@ def render_css():
         """
         <style>
             .indicadores-container {
-                display: flex;
-                justify-content: center;
-                gap: 30px;
-                margin-top: 30px;
-                flex-wrap: wrap;
-                max-width: 1400px;
-                margin-left: auto;
-                margin-right: auto;
-            }
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
             .indicador {
                 background-color: #FFFFFF;
                 border: 4px solid #0066B4;
