@@ -207,7 +207,7 @@ if data.empty:
 
 # Criação de cópia dos dados para o mapa antes da filtragem
 map_data = data.copy()
-map_data = ensure_coordinates(map_data, api_key)  # Garante que o mapa terá coordenadas
+map_data = ensure_coordinates(map_data, cache, api_key)  # Garante que o mapa terá coordenadas
 
 # Aplicar os filtros aos dados
 filtered_data, data_inicio, data_fim = apply_filters(data)
@@ -368,6 +368,9 @@ for _, row in map_data.iterrows():
         ).add_to(m)
 
 st_folium(m, width="100%", height=600)
+
+# Inicializar map_click_data para evitar erro de NameError
+map_click_data = st.session_state.get("map_click_data", None)
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
