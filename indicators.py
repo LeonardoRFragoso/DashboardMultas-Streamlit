@@ -44,9 +44,6 @@ def render_css():
                 margin: 0;
                 font-weight: bold;
             }
-            .hidden {
-                display: none;
-            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -118,13 +115,18 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True,
             )
 
-        # Renderizar todos os indicadores
-        create_card("Total de Multas", total_multas, "total_multas_button")
-        create_card("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}", "valor_total_button")
-        create_card("Multas no Ano Atual", multas_ano_atual, "multas_ano_button")
-        create_card("Valor Total Multas no Ano Atual", f"R$ {valor_multas_ano_atual:,.2f}", "valor_ano_button")
-        create_card("Multas no Mês Atual", multas_mes_atual, "multas_mes_button")
-        create_card("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}", "valor_mes_button")
+        # Renderizar todos os indicadores em três colunas
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            create_card("Total de Multas", total_multas, "total_multas_button")
+            create_card("Multas no Ano Atual", multas_ano_atual, "multas_ano_button")
+        with col2:
+            create_card("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}", "valor_total_button")
+            create_card("Valor Total Multas no Ano Atual", f"R$ {valor_multas_ano_atual:,.2f}", "valor_ano_button")
+        with col3:
+            create_card("Multas no Mês Atual", multas_mes_atual, "multas_mes_button")
+            create_card("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}", "valor_mes_button")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
