@@ -214,7 +214,7 @@ if missing_columns:
     st.stop()
 
 # Filters
-with st.expander("Filtros", expanded=True):  # A seção começa aberta
+with st.expander("Filtros", expanded=False):  # A seção começa fechada
     # Filtros de data
     data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
     data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
