@@ -207,7 +207,7 @@ if data.empty:
 
 # Criação de cópia dos dados para o mapa antes da filtragem
 map_data = data.copy()
-map_data = ensure_coordinates(map_data, cache, api_key)  # Garante que o mapa terá coordenadas
+map_data = ensure_coordinates(map_data, api_key)  # Garante que o mapa terá coordenadas
 
 # Aplicar os filtros aos dados
 filtered_data, data_inicio, data_fim = apply_filters(data)
