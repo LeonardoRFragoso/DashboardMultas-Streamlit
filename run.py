@@ -235,35 +235,21 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Indicador 1: Total de Multas (Auto de Infração únicos filtrados)
+total_multas = filtered_unique_fines[5].nunique()
 
-# Indicador 1: Total de Multas (Auto de Infração únicos)
-total_multas = data[5].nunique()  # Contar registros únicos no índice 5
+# Indicador 2: Valor Total das Multas no período filtrado
+valor_total_multas = filtered_unique_fines[14].sum()
 
-# Indicador 2: Valor Total das Multas (soma dos valores correspondentes no índice 14)
-# Garantir que o índice 14 esteja em formato numérico
-data[14] = pd.to_numeric(
-    data[14]
-    .astype(str)
-    .str.replace(r'[^\d,.-]', '', regex=True)
-    .str.replace(',', '.'),
-    errors='coerce'
-)
-
-# Filtrar registros únicos com base no índice 5
-unique_fines = data.drop_duplicates(subset=[5])
-
-# Somar os valores no índice 14 dos registros únicos
-valor_total_multas = unique_fines[14].sum()
-
-# Indicador 3: Multas no Mês Atual
+# Indicador 3: Multas no Mês Atual (já está correto)
 mes_atual = datetime.now().month
 multas_mes_atual = filtered_data[9].dt.month.value_counts().get(mes_atual, 0)
 
-# Indicador 4: Valor das Multas no Mês Atual
+# Indicador 4: Valor das Multas no Mês Atual (já está correto)
 valor_multas_mes_atual = filtered_data[filtered_data[9].dt.month == mes_atual][14].sum()
 
-# Indicador 5: Data da Consulta (primeiro registro do índice 0)
-data_consulta = data.iloc[0, 0] if not data.empty else "N/A"
+# Indicador 5: Data da Consulta (primeiro registro filtrado)
+data_consulta = filtered_data.iloc[0, 0] if not filtered_data.empty else "N/A"
 
 # Estrutura HTML para exibição dos indicadores
 indicadores_html = f"""
