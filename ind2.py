@@ -9,7 +9,7 @@ def render_css():
         <style>
             .indicadores-container {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                grid-template-columns: repeat(7, 1fr);
                 justify-content: center;
                 gap: 25px;
                 margin-top: 30px;
@@ -48,6 +48,33 @@ def render_css():
         unsafe_allow_html=True,
     )
 
+# Função para exibir a tabela ao clicar no indicador
+def exibir_tabela(indicador_id, data, filtered_data):
+    st.markdown(f"### Detalhes: {indicador_id.replace('_', ' ').title()}")
+
+    if indicador_id == "total_multas":
+        tabela = data.drop_duplicates(subset=[5])
+    elif indicador_id == "valor_total":
+        tabela = data[[5, 14, 12, 9]].drop_duplicates(subset=[5])
+    elif indicador_id == "multas_ano":
+        tabela = filtered_data[filtered_data[9].dt.year == datetime.now().year]
+    elif indicador_id == "valor_ano":
+        tabela = filtered_data[filtered_data[9].dt.year == datetime.now().year]
+    elif indicador_id == "multas_mes":
+        tabela = filtered_data[
+            (filtered_data[9].dt.year == datetime.now().year) & 
+            (filtered_data[9].dt.month == datetime.now().month)
+        ]
+    elif indicador_id == "valor_mes":
+        tabela = filtered_data[
+            (filtered_data[9].dt.year == datetime.now().year) & 
+            (filtered_data[9].dt.month == datetime.now().month)
+        ]
+    else:
+        tabela = pd.DataFrame(columns=["Nenhum dado encontrado."])
+
+    st.dataframe(tabela.reset_index(drop=True))
+
 # Função para renderizar indicadores
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
@@ -75,9 +102,8 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Ajuste da Data da Consulta (linha 2, índice 0)
     try:
-        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
+        data_consulta = data.iloc[1, 0]
         data_formatada = (
             data_consulta.strftime('%d/%m/%Y')
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
@@ -85,48 +111,41 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     except (IndexError, KeyError):
         data_formatada = "N/A"
 
-    # Renderizar todos os indicadores com HTML interativo
-    indicadores_html = f"""
-    <div class="indicadores-container">
-        <div class="indicador" data-id="total_multas">
-            <span>Total de Multas</span>
-            <p>{total_multas}</p>
-        </div>
-        <div class="indicador" data-id="valor_total">
-            <span>Valor Total das Multas</span>
-            <p>R$ {valor_total_multas:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="multas_ano">
-            <span>Multas no Ano Atual</span>
-            <p>{multas_ano_atual}</p>
-        </div>
-        <div class="indicador" data-id="valor_ano">
-            <span>Valor Total Multas no Ano Atual</span>
-            <p>R$ {valor_multas_ano_atual:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="multas_mes">
-            <span>Multas no Mês Atual</span>
-            <p>{multas_mes_atual}</p>
-        </div>
-        <div class="indicador" data-id="valor_mes">
-            <span>Valor das Multas no Mês Atual</span>
-            <p>R$ {valor_multas_mes_atual:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="data_consulta">
-            <span>Data da Consulta</span>
-            <p>{data_formatada}</p>
-        </div>
-    </div>
-    
-    <script>
-        const indicadores = document.querySelectorAll('.indicador');
-        indicadores.forEach(indicador => {{
-            indicador.addEventListener('dblclick', function() {{
-                const indicatorId = this.getAttribute('data-id');
-                fetch(`/abrir_planilha?id=${{indicatorId}}`);
-            }});
-        }});
-    </script>
-    """
+    # Inicializa o estado de clique
+    if 'selected_indicator' not in st.session_state:
+        st.session_state.selected_indicator = None
 
-    st.markdown(indicadores_html, unsafe_allow_html=True)
+    # Renderizar os indicadores como botões
+    indicadores = {
+        "total_multas": total_multas,
+        "valor_total": f"R$ {valor_total_multas:,.2f}",
+        "multas_ano": multas_ano_atual,
+        "valor_ano": f"R$ {valor_multas_ano_atual:,.2f}",
+        "multas_mes": multas_mes_atual,
+        "valor_mes": f"R$ {valor_multas_mes_atual:,.2f}",
+        "data_consulta": data_formatada
+    }
+
+    cols = st.columns(7)
+    indicadores_keys = list(indicadores.keys())
+
+    for i, col in enumerate(cols):
+        with col:
+            if st.button(indicadores_keys[i].replace('_', ' ').title()):
+                if st.session_state.selected_indicator == indicadores_keys[i]:
+                    st.session_state.selected_indicator = None
+                else:
+                    st.session_state.selected_indicator = indicadores_keys[i]
+            st.markdown(
+                f"""
+                <div class="indicador">
+                    <span>{indicadores_keys[i].replace('_', ' ').title()}</span>
+                    <p>{indicadores[indicadores_keys[i]]}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # Exibe tabela ao clicar duas vezes
+    if st.session_state.selected_indicator:
+        exibir_tabela(st.session_state.selected_indicator, data, filtered_data)
