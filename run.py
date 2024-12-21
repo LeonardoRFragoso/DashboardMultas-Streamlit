@@ -214,6 +214,88 @@ if missing_columns:
     st.stop()
 
 # Filters
+with st.expander("Filtros", expanded=True):  # A seção começa aberta
+    data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
+    data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
+    codigo_infracao_opcoes = data[8].dropna().unique()
+    descricao_infracao_opcoes = data[11].dropna().unique()
+    codigo_infracao_selecionado = st.multiselect("Selecione o Código da Infração", options=codigo_infracao_opcoes, default=codigo_infracao_opcoes.tolist())
+    descricao_infracao_selecionada = st.multiselect("Selecione a Descrição da Infração", options=descricao_infracao_opcoes, default=descricao_infracao_opcoes.tolist())
+    valor_min, valor_max = st.slider("Selecione o intervalo de valores das multas", min_value=float(data[14].min()), max_value=float(data[14].max()), value=(float(data[14].min()), float(data[14].max())), step=0.01)
+    placa_opcoes = data[1].dropna().unique()
+    placa_selecionada = st.multiselect("Selecione a Placa do Veículo", options=placa_opcoes, default=placa_opcoes.tolist())
+
+# Apply filters
+filtered_data = data[(data[9] >= pd.Timestamp(data_inicio)) & (data[9] <= pd.Timestamp(data_fim))]
+filtered_data = filtered_data[filtered_data[8].isin(codigo_infracao_selecionado)]
+filtered_data = filtered_data[filtered_data[11].isin(descricao_infracao_selecionada)]
+filtered_data = filtered_data[(filtered_data[14] >= valor_min) & (filtered_data[14] <= valor_max)]
+filtered_data = filtered_data[filtered_data[1].isin(placa_selecionada)]
+
+# Ensure coordinates and cache
+cache = load_cache()
+filtered_data = ensure_coordinates(filtered_data, cache, api_key)
+
+# Calculating and displaying main indicators
+st.markdown(
+    """
+    <h2 style="text-align: center; color: #F37529; border-bottom: 2px solid #F37529; padding-bottom: 5px; margin: 20px auto; display: block; width: 100%;">
+        Indicadores Principais
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
+
+unique_fines = filtered_data.drop_duplicates(subset=[5])  # Total geral de multas únicas
+total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
+valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
+
+indicadores_html = f"""
+<div class="indicadores-container">
+    <div class="indicador"><span>Total de Multas</span><p>{total_multas}</p></div>
+    <div class="indicador"><span>Valor Total das Multas</span><p>R$ {valor_total_multas:,.2f}</p></div>
+</div>
+"""
+st.markdown(indicadores_html, unsafe_allow_html=True)
+
+# Logo
+st.markdown(
+    f"""
+    <div class="logo-container">
+        <img src="{st.secrets['image']['logo_url']}" alt="Logo da Empresa">
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Logo and Header
+st.markdown(
+    f"""
+    <div class="titulo-dashboard-container">
+        <h1 class="titulo-dashboard">Torre de Controle Itracker - Dashboard de Multas</h1>
+        <p class="subtitulo-dashboard">Monitorando em tempo real as consultas de multas no DETRAN-RJ</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Load and preprocess data
+st.info("Carregando dados do Google Drive...")
+file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
+data = preprocess_data(file_buffer)
+
+if data.empty:
+    st.error("Os dados carregados estão vazios. Verifique o arquivo de origem.")
+    st.stop()
+
+# Ensure required columns
+required_columns = [1, 5, 12, 14, 9]
+missing_columns = [col for col in required_columns if col not in data.columns]
+if missing_columns:
+    st.error(f"As seguintes colunas estão ausentes: {missing_columns}")
+    st.stop()
+
+# Filters
 data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
 data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
 filtered_data = data[
