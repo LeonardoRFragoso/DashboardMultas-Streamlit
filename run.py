@@ -168,6 +168,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
+data = preprocess_data(file_buffer)
+
+if data.empty:
+    st.error("Os dados carregados estão vazios.")
+    st.stop()
+
 with st.expander("Filtros", expanded=False):
     data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
     data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
@@ -175,13 +182,6 @@ with st.expander("Filtros", expanded=False):
     descricao_infracao = st.selectbox("Descrição da Infração", options=["Todas"] + list(data[11].unique()))
     placa = st.selectbox("Placa", options=["Todas"] + list(data[1].unique()))
     valor_min, valor_max = st.slider("Valor das Multas", float(data[14].min()), float(data[14].max()), (float(data[14].min()), float(data[14].max())))
-
-file_buffer = download_file_from_drive(drive_file_id, drive_credentials)
-data = preprocess_data(file_buffer)
-
-if data.empty:
-    st.error("Os dados carregados estão vazios.")
-    st.stop()
 
 
 # Ensure required columns
