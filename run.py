@@ -222,32 +222,114 @@ filtered_data = data[
 ]
 
 # Filtros
-# Filtro por Código da Infração / Descrição (Índices 8 e 11)
-codigo_infracao_opcoes = data[8].dropna().unique()
-descricao_infracao_opcoes = data[11].dropna().unique()
+# Seção de Filtros Expansível
+with st.expander("Filtros", expanded=False):  # A seção começa fechada
+    # Filtro por Código da Infração / Descrição (Índices 8 e 11)
+    codigo_infracao_opcoes = data[8].dropna().unique()
+    descricao_infracao_opcoes = data[11].dropna().unique()
 
-codigo_infracao_selecionado = st.multiselect(
-    "Selecione o Código da Infração", options=codigo_infracao_opcoes, default=codigo_infracao_opcoes.tolist()
+    codigo_infracao_selecionado = st.multiselect(
+        "Selecione o Código da Infração", options=codigo_infracao_opcoes, default=codigo_infracao_opcoes.tolist()
+    )
+
+    descricao_infracao_selecionada = st.multiselect(
+        "Selecione a Descrição da Infração", options=descricao_infracao_opcoes, default=descricao_infracao_opcoes.tolist()
+    )
+
+    # Filtro por Valor das Multas (Índice 14)
+    valor_min, valor_max = st.slider(
+        "Selecione o intervalo de valores das multas",
+        min_value=float(data[14].min()),
+        max_value=float(data[14].max()),
+        value=(float(data[14].min()), float(data[14].max())),
+        step=0.01
+    )
+
+    # Filtro por Placa (Índice 1)
+    placa_opcoes = data[1].dropna().unique()
+    placa_selecionada = st.multiselect(
+        "Selecione a Placa do Veículo", options=placa_opcoes, default=placa_opcoes.tolist()
+    )
+
+# Aplicar filtros aos dados
+filtered_data = data[
+    (data[9] >= pd.Timestamp(data_inicio)) & 
+    (data[9] <= pd.Timestamp(data_fim))
+]
+
+# Aplicar filtro por Código da Infração
+filtered_data = filtered_data[filtered_data[8].isin(codigo_infracao_selecionado)]
+
+# Aplicar filtro por Descrição da Infração
+filtered_data = filtered_data[filtered_data[11].isin(descricao_infracao_selecionada)]
+
+# Aplicar filtro por Valor das Multas
+filtered_data = filtered_data[
+    (filtered_data[14] >= valor_min) & 
+    (filtered_data[14] <= valor_max)
+]
+
+# Aplicar filtro por Placa
+filtered_data = filtered_data[filtered_data[1].isin(placa_selecionada)]
+
+# Ensure coordinates and cache
+cache = load_cache()  # Carregar coordenadas do cache
+filtered_data = ensure_coordinates(filtered_data, cache, api_key)
+
+# Continue with calculations and displaying results based on filtered data
+st.markdown(
+    """
+    <h2 style="
+        text-align: center; 
+        color: #F37529; 
+        border-bottom: 2px solid #F37529; 
+        padding-bottom: 5px; 
+        margin: 20px auto; 
+        display: block; 
+        width: 100%; 
+    ">
+        Indicadores Principais
+    </h2>
+    """, 
+    unsafe_allow_html=True
 )
 
-descricao_infracao_selecionada = st.multiselect(
-    "Selecione a Descrição da Infração", options=descricao_infracao_opcoes, default=descricao_infracao_opcoes.tolist()
+# Indicadores principais com base no filtro de dados
+if 5 in filtered_data.columns:
+    unique_fines = filtered_data.drop_duplicates(subset=[5])  # Total geral de multas únicas
+else:
+    st.error("A coluna com índice 5 não foi encontrada nos dados.")
+    unique_fines = pd.DataFrame(columns=[5, 14, 9])
+
+# Para exibir os indicadores baseados nos filtros aplicados
+total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
+valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
+
+# Gráficos e outros componentes (baseados em filtered_data)
+# Gráfico de Veículos com Mais Multas
+vehicle_summary = (
+    unique_fines.groupby(1)
+    .agg(
+        Numero_de_Multas=(5, 'count'),
+        Valor_Total=(14, 'sum')
+    )
+    .reset_index()
+    .rename(columns={1: 'Placa do Veículo'})
 )
 
-# Filtro por Valor das Multas (Índice 14)
-valor_min, valor_max = st.slider(
-    "Selecione o intervalo de valores das multas",
-    min_value=float(data[14].min()),
-    max_value=float(data[14].max()),
-    value=(float(data[14].min()), float(data[14].max())),
-    step=0.01
+vehicle_summary = vehicle_summary.sort_values(by='Valor_Total', ascending=False)
+fig = px.bar(
+    vehicle_summary.head(10),
+    x='Placa do Veículo',
+    y='Valor_Total',
+    color='Numero_de_Multas',
+    text='Numero_de_Multas',
+    title='',
+    labels={'Valor_Total': 'Total das Multas (R$)', 'Numero_de_Multas': 'Número de Multas'}
 )
+fig.update_traces(texttemplate='%{text} multas<br>R$ %{y:,.2f}', textposition='outside')
+st.plotly_chart(fig, use_container_width=True)
 
-# Filtro por Placa (Índice 1)
-placa_opcoes = data[1].dropna().unique()
-placa_selecionada = st.multiselect(
-    "Selecione a Placa do Veículo", options=placa_opcoes, default=placa_opcoes.tolist()
-)
 
 # Ensure coordinates and cache
 cache = load_cache()  # Carregar coordenadas do cache
