@@ -96,9 +96,6 @@ except KeyError as e:
     st.error(f"Erro ao carregar os segredos: {e}")
     st.stop()
 
-# Streamlit setup
-st.set_page_config(page_title="Multas Dashboard", layout="wide")
-
 # CSS Styling
 st.markdown(
     """
