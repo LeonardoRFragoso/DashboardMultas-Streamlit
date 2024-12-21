@@ -48,44 +48,30 @@ def render_css():
         unsafe_allow_html=True,
     )
 
-# Função para renderizar indicadores
+# Função para renderizar indicadores e capturar o clique
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
-    if 5 in data.columns:
-        unique_fines = data.drop_duplicates(subset=[5])
-    else:
-        st.error("A coluna com índice 5 não foi encontrada nos dados.")
-        unique_fines = pd.DataFrame(columns=[5, 14, 9])
-
-    # Cálculos dos indicadores
-    total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
-    valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
+    # Cálculo dos Indicadores
+    total_multas = data[5].nunique() if 5 in data.columns else 0
+    valor_total_multas = data[14].sum() if 14 in data.columns else 0
     ano_atual = datetime.now().year
-    mes_atual = data_fim.month if data_fim else datetime.now().month
+    multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][5].nunique() if 9 in filtered_data.columns else 0
+    valor_multas_ano_atual = filtered_data[filtered_data[9].dt.year == ano_atual][14].sum() if 14 in filtered_data.columns else 0
+    multas_mes_atual = filtered_data[(filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == datetime.now().month)][5].nunique() if 9 in filtered_data.columns else 0
+    valor_multas_mes_atual = filtered_data[(filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == datetime.now().month)][14].sum() if 14 in filtered_data.columns else 0
 
-    multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][5].nunique() if 9 in unique_fines.columns else 0
-    valor_multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][14].sum() if 14 in unique_fines.columns else 0
-
-    multas_mes_atual = filtered_data[
-        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
-    ][5].nunique() if 9 in filtered_data.columns else 0
-
-    valor_multas_mes_atual = filtered_data[
-        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
-    ][14].sum() if 14 in filtered_data.columns else 0
-
-    # Ajuste da Data da Consulta (linha 2, índice 0)
+    # Data da consulta (linha 2, índice 0)
     try:
-        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
+        data_consulta = data.iloc[1, 0]  # Segunda linha (índice 1), coluna 0
         data_formatada = (
             data_consulta.strftime('%d/%m/%Y')
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
         )
-    except (IndexError, KeyError):
+    except:
         data_formatada = "N/A"
 
-    # Renderizar todos os indicadores com HTML interativo
+    # Indicadores em HTML com Identificadores Únicos
     indicadores_html = f"""
     <div class="indicadores-container">
         <div class="indicador" data-id="total_multas">
@@ -122,11 +108,33 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         const indicadores = document.querySelectorAll('.indicador');
         indicadores.forEach(indicador => {{
             indicador.addEventListener('dblclick', function() {{
-                const indicatorId = this.getAttribute('data-id');
-                fetch(`/abrir_planilha?id=${{indicatorId}}`);
+                const indicadorID = this.getAttribute('data-id');
+                const message = {{'indicador': indicadorID}};
+                window.parent.postMessage(message, "*");
             }});
         }});
     </script>
     """
 
     st.markdown(indicadores_html, unsafe_allow_html=True)
+
+    # Recebe mensagem do JS e carrega a planilha
+    msg = st.experimental_get_query_params().get('indicador')
+    if msg:
+        abrir_planilha(msg[0])
+
+# Função para Abrir Planilha com Base no Indicador
+def abrir_planilha(indicador_id):
+    planilhas = {
+        "total_multas": "planilha_total_multas.xlsx",
+        "valor_total": "planilha_valor_total.xlsx",
+        "multas_ano": "planilha_multas_ano.xlsx",
+        "valor_ano": "planilha_valor_ano.xlsx",
+        "multas_mes": "planilha_multas_mes.xlsx",
+        "valor_mes": "planilha_valor_mes.xlsx",
+        "data_consulta": "planilha_consulta.xlsx"
+    }
+    planilha = planilhas.get(indicador_id, "default.xlsx")
+    st.write(f"Abrindo planilha: **{planilha}**")
+    df = pd.read_excel(planilha)
+    st.dataframe(df)
