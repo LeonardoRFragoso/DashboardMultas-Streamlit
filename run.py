@@ -139,7 +139,7 @@ st.markdown(
             margin-bottom: 20px;
         }
         .logo-container img {
-            max-width: 250px;
+            max-width: 450px;
             height: auto;
         }
 
