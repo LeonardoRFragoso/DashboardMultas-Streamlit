@@ -2,7 +2,48 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# Função para aplicar o CSS
+st.set_page_config(layout="wide")
+
+def handle_table_display(df, columns_to_display, rename_map=None):
+    display_df = df[columns_to_display].copy()
+    if rename_map:
+        display_df = display_df.rename(columns=rename_map)
+
+    if 14 in columns_to_display:
+        display_df[rename_map[14]] = display_df[rename_map[14]].apply(lambda x: f'R$ {x:,.2f}')
+
+    if 0 in columns_to_display:
+        display_df[rename_map[0]] = pd.to_datetime(display_df[rename_map[0]]).dt.strftime('%d/%m/%Y')
+
+    st.markdown(
+        """
+        <style>
+            [data-testid="stTable"] table {
+                width: 100% !important;
+            }
+            [data-testid="stTable"] td, [data-testid="stTable"] th {
+                white-space: nowrap;
+                min-width: 120px;
+            }
+            div[data-testid="stDataFrame"] > div {
+                width: 100% !important;
+            }
+            div[data-testid="stDataFrame"] > div > iframe {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    return st.dataframe(
+        display_df,
+        hide_index=True,
+        use_container_width=True,
+        height=500
+    )
+
 def render_css():
     st.markdown(
         """
@@ -25,108 +66,100 @@ def render_css():
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
                 text-align: center;
                 padding: 20px;
-                width: 210px;
+                width: 100%;
+                max-width: 210px;
                 height: 140px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
+                margin: 0 auto 5px auto;
             }
-            .indicador:hover {
-                transform: scale(1.05);
+
+            .button-container {
+                width: 100%;
+                max-width: 210px;
+                margin: 10px auto;
+                text-align: center;
             }
-            .indicador span {
-                font-size: 18px;
-                color: #0066B4;
+
+            .stButton > button {
+                background-color: #F37529 !important;
+                color: white !important;
+                font-weight: 600 !important;
+                width: 100% !important;
+                max-width: 210px !important;
+                margin: 5px auto !important;
+                display: block !important;
             }
-            .indicador p {
-                font-size: 24px;
-                color: #0066B4;
-                margin: 0;
-                font-weight: bold;
+
+            .stButton > button:hover {
+                background-color: #ff8c42 !important;
+                transform: translateY(-2px) !important;
+                transition: all 0.2s ease !important;
+                box-shadow: 0 6px 16px rgba(243, 117, 41, 0.3) !important;
+            }
+
+            div[data-testid="column"] {
+                padding: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+            }
+            div[data-testid="stDataFrame"] > div {
+                width: 100% !important;
+            }
+            div[data-testid="stDataFrame"] > div > iframe {
+                width: 100% !important;
+                min-width: 100% !important;
             }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-# Função para renderizar indicadores
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
-    if 5 in data.columns:
-        unique_fines = data.drop_duplicates(subset=[5])
-    else:
+    if 5 not in data.columns:
         st.error("A coluna com índice 5 não foi encontrada nos dados.")
-        unique_fines = pd.DataFrame(columns=[5, 14, 9])
+        return
 
-    # Cálculos dos indicadores
-    total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
-    valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
-    ano_atual = datetime.now().year
-    mes_atual = data_fim.month if data_fim else datetime.now().month
+    column_map = {
+        0: "Data",
+        1: "Placa do Veículo",
+        5: "Auto de Infração",
+        14: "Valor"
+    }
 
-    multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][5].nunique() if 9 in unique_fines.columns else 0
-    valor_multas_ano_atual = unique_fines[unique_fines[9].dt.year == ano_atual][14].sum() if 14 in unique_fines.columns else 0
-
-    multas_mes_atual = filtered_data[
-        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
-    ][5].nunique() if 9 in filtered_data.columns else 0
-
-    valor_multas_mes_atual = filtered_data[
-        (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
-    ][14].sum() if 14 in filtered_data.columns else 0
-
-    # Ajuste da Data da Consulta (linha 2, índice 0)
     try:
-        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
+        unique_fines = data.drop_duplicates(subset=[5])
+        
+        total_multas = unique_fines[5].nunique()
+        valor_total_multas = unique_fines[14].sum()
+        ano_atual = datetime.now().year
+        mes_atual = data_fim.month if data_fim else datetime.now().month
+
+        data_consulta = data.iloc[1, 0]
         data_formatada = (
             data_consulta.strftime('%d/%m/%Y')
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
         )
-    except (IndexError, KeyError):
-        data_formatada = "N/A"
 
-    # Renderizar todos os indicadores com HTML interativo
-    indicadores_html = f"""
-    <div class="indicadores-container">
-        <div class="indicador" data-id="total_multas">
-            <span>Total de Multas</span>
-            <p>{total_multas}</p>
-        </div>
-        <div class="indicador" data-id="valor_total">
-            <span>Valor Total das Multas</span>
-            <p>R$ {valor_total_multas:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="multas_ano">
-            <span>Multas no Ano Atual</span>
-            <p>{multas_ano_atual}</p>
-        </div>
-        <div class="indicador" data-id="valor_ano">
-            <span>Valor Total Multas no Ano Atual</span>
-            <p>R$ {valor_multas_ano_atual:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="multas_mes">
-            <span>Multas no Mês Atual</span>
-            <p>{multas_mes_atual}</p>
-        </div>
-        <div class="indicador" data-id="valor_mes">
-            <span>Valor das Multas no Mês Atual</span>
-            <p>R$ {valor_multas_mes_atual:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="data_consulta">
-            <span>Data da Consulta</span>
-            <p>{data_formatada}</p>
-        </div>
-    </div>
-    
-    <script>
-        const indicadores = document.querySelectorAll('.indicador');
-        indicadores.forEach(indicador => {{
-            indicador.addEventListener('dblclick', function() {{
-                const indicatorId = this.getAttribute('data-id');
-                fetch(`/abrir_planilha?id=${{indicatorId}}`);
-            }});
-        }});
-    </script>
-    """
+        cols = st.columns(7)
+        
+        for i, (label, valor) in enumerate([
+            ("Total de Multas", total_multas),
+            ("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}"),
+            ("Data da Consulta", data_formatada)]):
+            with cols[i]:
+                st.markdown(
+                    f"""<div class="indicador">
+                        <span>{label}</span>
+                        <p>{valor}</p>
+                    </div>""",
+                    unsafe_allow_html=True
+                )
+                st.button(f"🔍 Detalhes - {label}", key=f"detalhes_{i}")
+                handle_table_display(unique_fines, [0, 1, 5], column_map)
 
-    st.markdown(indicadores_html, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Erro ao processar os dados: {str(e)}")
