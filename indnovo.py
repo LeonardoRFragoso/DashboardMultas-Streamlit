@@ -77,7 +77,8 @@ def render_css():
             .button-container {
                 width: 100%;
                 max-width: 210px;
-                margin: 0 auto;
+                margin: 10px auto;
+                text-align: center;
             }
 
             .stButton > button {
@@ -166,5 +167,5 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 </div>""", 
                 unsafe_allow_html=True
             )
-            if st.button("🔍 Detalhes", key="total_multas"):
-                handle_table_display(unique_fines, [0, 1, 5], column_map)
+        st.button("🔍 Detalhes do Total de Multas", key="total_multas_button")
+        handle_table_display(unique_fines, [0, 1, 5], column_map)
