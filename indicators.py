@@ -2,13 +2,16 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+# Configurar a página para usar o layout 'wide'
+st.set_page_config(layout="wide")
+
 def handle_table_display(df, columns_to_display, rename_map=None):
     """Função auxiliar para formatar e exibir dataframes"""
     display_df = df[columns_to_display].copy()
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
 
-    # Resetando o índice e exibindo a tabela com largura ajustada
+    # Resetando o índice e exibindo a tabela
     display_df = display_df.reset_index(drop=True)
 
     # Adicionando estilo CSS para garantir que a tabela ocupe 100% da largura disponível
@@ -18,6 +21,7 @@ def handle_table_display(df, columns_to_display, rename_map=None):
             .stDataFrame {
                 width: 100% !important;
                 overflow-x: auto !important;
+                display: block;
             }
             .stDataFrame .dataframe {
                 width: 100% !important;
@@ -28,10 +32,9 @@ def handle_table_display(df, columns_to_display, rename_map=None):
         """, 
         unsafe_allow_html=True
     )
-    
-    # Exibindo a tabela com a largura ajustada
-    st.write(display_df)  # Usando st.write() ao invés de st.dataframe para melhor controle de layout
 
+    # Exibindo a tabela com a largura ajustada
+    st.dataframe(display_df, hide_index=True, use_container_width=True)
 
 def render_css():
     st.markdown(
