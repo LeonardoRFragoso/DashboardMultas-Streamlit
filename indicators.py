@@ -1,54 +1,3 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-
-# Função para aplicar o CSS
-def render_css():
-    st.markdown(
-        """
-        <style>
-            .indicadores-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-                justify-content: center;
-                gap: 25px;
-                margin-top: 30px;
-                max-width: 1600px;
-                margin-left: auto;
-                margin-right: auto;
-            }
-
-            .indicador {
-                background-color: #FFFFFF;
-                border: 4px solid #0066B4;
-                border-radius: 15px;
-                box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
-                text-align: center;
-                padding: 20px;
-                width: 210px;
-                height: 140px;
-                cursor: pointer;
-                transition: transform 0.2s ease-in-out;
-            }
-            .indicador:hover {
-                transform: scale(1.05);
-            }
-            .indicador span {
-                font-size: 18px;
-                color: #0066B4;
-            }
-            .indicador p {
-                font-size: 24px;
-                color: #0066B4;
-                margin: 0;
-                font-weight: bold;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# Função para renderizar indicadores
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
@@ -58,7 +7,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.error("A coluna com índice 5 não foi encontrada nos dados.")
         unique_fines = pd.DataFrame(columns=[5, 14, 9])
 
-    # Cálculos dos indicadores
+    # Cálculos dos indicadores (mantido como estava)
     total_multas = unique_fines[5].nunique() if 5 in unique_fines.columns else 0
     valor_total_multas = unique_fines[14].sum() if 14 in unique_fines.columns else 0
     ano_atual = datetime.now().year
@@ -75,9 +24,8 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Ajuste da Data da Consulta (linha 2, índice 0)
     try:
-        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
+        data_consulta = data.iloc[1, 0]
         data_formatada = (
             data_consulta.strftime('%d/%m/%Y')
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
@@ -85,7 +33,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     except (IndexError, KeyError):
         data_formatada = "N/A"
 
-    # Renderizar todos os indicadores com HTML interativo
+    # HTML dos indicadores com os botões
     indicadores_html = f"""
     <div class="indicadores-container">
         <div class="indicador" data-id="total_multas">
@@ -117,16 +65,60 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
             <p>{data_formatada}</p>
         </div>
     </div>
-    
-    <script>
-        const indicadores = document.querySelectorAll('.indicador');
-        indicadores.forEach(indicador => {{
-            indicador.addEventListener('dblclick', function() {{
-                const indicatorId = this.getAttribute('data-id');
-                fetch(`/abrir_planilha?id=${{indicatorId}}`);
-            }});
-        }});
-    </script>
     """
 
+    # Renderizar os indicadores
     st.markdown(indicadores_html, unsafe_allow_html=True)
+
+    # Botões de detalhes alinhados com os indicadores
+    btn_col1, btn_col2, btn_col3, btn_col4, btn_col5, btn_col6, btn_col7 = st.columns(7)
+    
+    with btn_col1:
+        if st.button("🔍 Detalhes", key="total_multas", type="primary"):
+            st.dataframe(unique_fines)
+    
+    with btn_col2:
+        if st.button("🔍 Detalhes", key="valor_total", type="primary"):
+            st.dataframe(unique_fines[[5, 14]])
+
+    with btn_col3:
+        if st.button("🔍 Detalhes", key="multas_ano", type="primary"):
+            st.dataframe(unique_fines[unique_fines[9].dt.year == ano_atual])
+    
+    with btn_col4:
+        if st.button("🔍 Detalhes", key="valor_ano", type="primary"):
+            st.dataframe(unique_fines[unique_fines[9].dt.year == ano_atual][[5, 14]])
+    
+    with btn_col5:
+        if st.button("🔍 Detalhes", key="multas_mes", type="primary"):
+            st.dataframe(filtered_data[
+                (filtered_data[9].dt.year == ano_atual) & 
+                (filtered_data[9].dt.month == mes_atual)
+            ])
+    
+    with btn_col6:
+        if st.button("🔍 Detalhes", key="valor_mes", type="primary"):
+            st.dataframe(filtered_data[
+                (filtered_data[9].dt.year == ano_atual) & 
+                (filtered_data[9].dt.month == mes_atual)
+            ][[5, 14]])
+    
+    with btn_col7:
+        if st.button("🔍 Detalhes", key="data_consulta", type="primary"):
+            st.write(f"Período: {data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}")
+
+    # Adicionar CSS para alinhar os botões
+    st.markdown("""
+        <style>
+            .stButton {
+                display: flex;
+                justify-content: center;
+                margin-top: -20px;
+            }
+            
+            .stButton > button {
+                background-color: #F37529 !important;
+                color: white !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
