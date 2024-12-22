@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-
-# Configurar a página para usar o layout 'wide'
-st.set_page_config(layout="wide")
+from datetime import datetime
 
 def handle_table_display(df, columns_to_display, rename_map=None):
     """Função auxiliar para formatar e exibir dataframes"""
@@ -10,31 +8,9 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
     
-    # Adicionando CSS para garantir que a tabela ocupe 100% da largura disponível
-    st.markdown(
-        """
-        <style>
-            .stDataFrame {
-                width: 100% !important;
-                overflow-x: visible !important;
-            }
-            .stDataFrame .dataframe {
-                width: 100% !important;
-                display: block;
-                overflow-x: auto !important;
-            }
-        </style>
-        """, 
-        unsafe_allow_html=True
-    )
-    
+    # Exibir a tabela com a largura ajustada
     st.dataframe(display_df, hide_index=True, use_container_width=True)
 
-# Exemplo de como exibir a tabela com as multas
-# Supondo que 'data' seja o seu DataFrame
-# Renomeando as colunas conforme necessário
-column_map = {0: 'Data', 1: 'Placa do Veículo', 5: 'Auto de Infração', 14: 'Valor a ser pago R$'}
-handle_table_display(data, [0, 1, 5, 14], column_map)
 
 def render_css():
     st.markdown(
