@@ -12,8 +12,6 @@ def initialize_cache():
     if 'cache' not in st.session_state:
         st.session_state.cache = load_cache()
 
-initialize_cache()  # Inicializar no carregamento do módulo
-
 def load_cache():
     if os.path.exists(CACHE_FILE):
         try:
@@ -22,6 +20,13 @@ def load_cache():
         except (IOError, json.JSONDecodeError) as e:
             print(f"Erro ao carregar o cache: {e}")
     return {}
+
+def initialize_cache():
+    if 'cache' not in st.session_state:
+        st.session_state.cache = load_cache()
+
+initialize_cache()  # Inicializar no carregamento do módulo
+
 
 def save_cache():
     try:
