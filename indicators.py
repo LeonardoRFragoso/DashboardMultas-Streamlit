@@ -7,12 +7,31 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     display_df = df[columns_to_display].copy()
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
-    
-    # Resetando o índice e exibindo a tabela com uso total da largura
+
+    # Resetando o índice e exibindo a tabela com largura ajustada
     display_df = display_df.reset_index(drop=True)
 
+    # Adicionando estilo CSS para garantir que a tabela ocupe 100% da largura disponível
+    st.markdown(
+        """
+        <style>
+            .stDataFrame {
+                width: 100% !important;
+                overflow-x: auto !important;
+            }
+            .stDataFrame .dataframe {
+                width: 100% !important;
+                display: block;
+                overflow-x: auto !important;
+            }
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
+    
     # Exibindo a tabela com a largura ajustada
-    st.dataframe(display_df, hide_index=True, use_container_width=True)
+    st.write(display_df)  # Usando st.write() ao invés de st.dataframe para melhor controle de layout
+
 
 def render_css():
     st.markdown(
