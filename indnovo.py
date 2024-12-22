@@ -2,20 +2,16 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# Configurar a página para usar o layout 'wide'
 st.set_page_config(layout="wide")
 
 def handle_table_display(df, columns_to_display, rename_map=None):
-    """Função auxiliar para formatar e exibir dataframes"""
     display_df = df[columns_to_display].copy()
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
 
-    # Formatando valores monetários
     if 14 in columns_to_display:
         display_df[rename_map[14]] = display_df[rename_map[14]].apply(lambda x: f'R$ {x:,.2f}')
 
-    # Formatando datas
     if 0 in columns_to_display:
         display_df[rename_map[0]] = pd.to_datetime(display_df[rename_map[0]]).dt.strftime('%d/%m/%Y')
 
@@ -23,12 +19,18 @@ def handle_table_display(df, columns_to_display, rename_map=None):
         """
         <style>
             [data-testid="stTable"] table {
-                width: 100%;
-                min-width: 400px;
+                width: 100% !important;
             }
-            [data-testid="stTable"] td {
+            [data-testid="stTable"] td, [data-testid="stTable"] th {
                 white-space: nowrap;
-                min-width: 100px;
+                min-width: 120px;
+            }
+            div[data-testid="stDataFrame"] > div {
+                width: 100% !important;
+            }
+            div[data-testid="stDataFrame"] > div > iframe {
+                width: 100% !important;
+                min-width: 100% !important;
             }
         </style>
         """,
@@ -39,7 +41,7 @@ def handle_table_display(df, columns_to_display, rename_map=None):
         display_df,
         hide_index=True,
         use_container_width=True,
-        height=300
+        height=500
     )
 
 def render_css():
@@ -101,11 +103,9 @@ def render_css():
                 flex-direction: column !important;
                 align-items: center !important;
             }
-            
             div[data-testid="stDataFrame"] > div {
                 width: 100% !important;
             }
-
             div[data-testid="stDataFrame"] > div > iframe {
                 width: 100% !important;
                 min-width: 100% !important;
@@ -122,7 +122,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.error("A coluna com índice 5 não foi encontrada nos dados.")
         return
 
-    # Definição de colunas para exibição
     column_map = {
         0: "Data",
         1: "Placa do Veículo",
@@ -157,7 +156,6 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
         )
 
-        # Layout dos indicadores
         cols = st.columns(7)
         
         with cols[0]:
@@ -170,82 +168,3 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
             )
             if st.button("🔍 Detalhes", key="total_multas"):
                 handle_table_display(unique_fines, [0, 1, 5], column_map)
-
-        with cols[1]:
-            st.markdown(
-                f"""<div class="indicador">
-                    <span>Valor Total das Multas</span>
-                    <p>R$ {valor_total_multas:,.2f}</p>
-                </div>""",
-                unsafe_allow_html=True
-            )
-            if st.button("🔍 Detalhes", key="valor_total"):
-                handle_table_display(unique_fines, [0, 1, 5, 14], column_map)
-
-        with cols[2]:
-            st.markdown(
-                f"""<div class="indicador">
-                    <span>Multas no Ano Atual</span>
-                    <p>{multas_ano_atual}</p>
-                </div>""",
-                unsafe_allow_html=True
-            )
-            if st.button("🔍 Detalhes", key="multas_ano"):
-                ano_data = unique_fines[unique_fines[9].dt.year == ano_atual]
-                handle_table_display(ano_data, [0, 1, 5], column_map)
-
-        with cols[3]:
-            st.markdown(
-                f"""<div class="indicador">
-                    <span>Valor Total Multas no Ano Atual</span>
-                    <p>R$ {valor_multas_ano_atual:,.2f}</p>
-                </div>""",
-                unsafe_allow_html=True
-            )
-            if st.button("🔍 Detalhes", key="valor_ano"):
-                ano_data = unique_fines[unique_fines[9].dt.year == ano_atual]
-                handle_table_display(ano_data, [0, 1, 5, 14], column_map)
-
-        with cols[4]:
-            st.markdown(
-                f"""<div class="indicador">
-                    <span>Multas no Mês Atual</span>
-                    <p>{multas_mes_atual}</p>
-                </div>""",
-                unsafe_allow_html=True
-            )
-            if st.button("🔍 Detalhes", key="multas_mes"):
-                mes_data = filtered_data[
-                    (filtered_data[9].dt.year == ano_atual) & 
-                    (filtered_data[9].dt.month == mes_atual)
-                ]
-                handle_table_display(mes_data, [0, 1, 5], column_map)
-
-        with cols[5]:
-            st.markdown(
-                f"""<div class="indicador">
-                    <span>Valor das Multas no Mês Atual</span>
-                    <p>R$ {valor_multas_mes_atual:,.2f}</p>
-                </div>""",
-                unsafe_allow_html=True
-            )
-            if st.button("🔍 Detalhes", key="valor_mes"):
-                mes_data = filtered_data[
-                    (filtered_data[9].dt.year == ano_atual) & 
-                    (filtered_data[9].dt.month == mes_atual)
-                ]
-                handle_table_display(mes_data, [0, 1, 5, 14], column_map)
-
-        with cols[6]:
-            st.markdown(
-                f"""<div class="indicador">
-                    <span>Data da Consulta</span>
-                    <p>{data_formatada}</p>
-                </div>""",
-                unsafe_allow_html=True
-            )
-            if st.button("🔍 Detalhes", key="data_consulta"):
-                st.write(f"Período analisado: {data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}")
-
-    except Exception as e:
-        st.error(f"Erro ao processar os dados: {str(e)}")
