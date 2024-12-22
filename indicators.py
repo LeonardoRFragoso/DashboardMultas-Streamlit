@@ -19,11 +19,27 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if 0 in columns_to_display:
         display_df[rename_map[0]] = pd.to_datetime(display_df[rename_map[0]]).dt.strftime('%d/%m/%Y')
 
-    st.dataframe(
+    st.markdown(
+        """
+        <style>
+            [data-testid="stTable"] table {
+                width: 100%;
+                min-width: 400px;
+            }
+            [data-testid="stTable"] td {
+                white-space: nowrap;
+                min-width: 100px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    return st.dataframe(
         display_df,
         hide_index=True,
         use_container_width=True,
-        height=400
+        height=300
     )
 
 def render_css():
@@ -48,27 +64,18 @@ def render_css():
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
                 text-align: center;
                 padding: 20px;
-                width: 210px;
+                width: 100%;
+                max-width: 210px;
                 height: 140px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
-                margin-bottom: 5px;
+                margin: 0 auto 5px auto;
             }
 
-            .indicador:hover {
-                transform: scale(1.05);
-            }
-
-            .indicador span {
-                font-size: 18px;
-                color: #0066B4;
-            }
-
-            .indicador p {
-                font-size: 24px;
-                color: #0066B4;
-                margin: 0;
-                font-weight: bold;
+            .button-container {
+                width: 100%;
+                max-width: 210px;
+                margin: 0 auto;
             }
 
             .stButton > button {
@@ -76,7 +83,9 @@ def render_css():
                 color: white !important;
                 font-weight: 600 !important;
                 width: 100% !important;
-                margin-top: 5px !important;
+                max-width: 210px !important;
+                margin: 5px auto !important;
+                display: block !important;
             }
 
             .stButton > button:hover {
