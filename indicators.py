@@ -17,9 +17,20 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if 0 in columns_to_display:
         display_df[rename_map[0]] = pd.to_datetime(display_df[rename_map[0]]).dt.strftime('%d/%m/%Y')
 
-    # CSS para ajustar a largura da tabela
     st.markdown(
         """
+        <h2 style="
+            text-align: center; 
+            color: #0066B4; 
+            border-bottom: 2px solid #0066B4; 
+            padding-bottom: 5px; 
+            margin: 20px auto; 
+            display: block; 
+            width: 100%; 
+        ">
+            Detalhes da Consulta
+        </h2>
+
         <style>
             .element-container {
                 padding: 0 !important;
@@ -51,15 +62,47 @@ def handle_table_display(df, columns_to_display, rename_map=None):
                 padding: 0 !important;
                 margin: 0 !important;
             }
+
+            .dataframe {
+                width: 100% !important;
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+            }
+            
+            .dataframe th {
+                background-color: #0066B4 !important;
+                color: white !important;
+                font-weight: 500 !important;
+                padding: 12px 8px !important;
+                white-space: nowrap !important;
+            }
+            
+            .dataframe td {
+                padding: 10px 8px !important;
+                border-bottom: 1px solid #e0e0e0 !important;
+                white-space: nowrap !important;
+            }
+            
+            .dataframe tr:nth-child(even) {
+                background-color: #f8f9fa !important;
+            }
+            
+            .dataframe tr:hover {
+                background-color: #f0f7ff !important;
+            }
+
+            iframe[data-testid="stDataFrame"] {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
         </style>
-        """,
+        """, 
         unsafe_allow_html=True
     )
 
     return st.dataframe(
-        display_df,
-        hide_index=True,
+        display_df.reset_index(drop=True),
         use_container_width=True,
+        hide_index=True,
         height=400
     )
 
@@ -93,6 +136,22 @@ def render_css():
                 margin: 0 auto 5px auto;
             }
 
+            .indicador:hover {
+                transform: scale(1.05);
+            }
+
+            .indicador span {
+                font-size: 18px;
+                color: #0066B4;
+            }
+
+            .indicador p {
+                font-size: 24px;
+                color: #0066B4;
+                margin: 0;
+                font-weight: bold;
+            }
+
             .button-container {
                 width: 100%;
                 max-width: 210px;
@@ -121,31 +180,6 @@ def render_css():
                 display: flex !important;
                 flex-direction: column !important;
                 align-items: center !important;
-            }
-            
-            div.stDataFrame {
-                width: 100% !important;
-            }
-
-            div.stDataFrame > div {
-                width: 100% !important;
-            }
-
-            div.stDataFrame > div > iframe {
-                width: 100% !important;
-                min-width: 100% !important;
-            }
-
-            # Ajuste para as tabelas
-            [data-testid="column"] {
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: 1rem !important;
-            }
-
-            [data-testid="column"]:has(div.stDataFrame) {
-                width: 100% !important;
-                max-width: 100% !important;
             }
         </style>
         """,
