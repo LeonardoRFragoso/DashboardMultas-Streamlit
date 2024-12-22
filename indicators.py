@@ -8,7 +8,10 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
     
-    # Exibir a tabela com a largura ajustada
+    # Resetando o índice e exibindo a tabela
+    display_df = display_df.reset_index(drop=True)
+
+    # Exibindo a tabela com a largura ajustada
     st.dataframe(display_df, hide_index=True, use_container_width=True)
 
 
