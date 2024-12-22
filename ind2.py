@@ -8,12 +8,17 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
     
-    # Adicionando estilo CSS diretamente
+    # Adicionando estilo CSS diretamente para garantir a largura
     st.markdown(
         """
         <style>
-            .stDataFrame {
+            .stDataFrame > div {
                 width: 100% !important;
+                overflow-x: visible !important;
+            }
+            .stDataFrame .dataframe {
+                width: 100% !important;
+                display: block;
                 overflow-x: auto !important;
             }
         </style>
@@ -22,6 +27,7 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     )
     
     st.dataframe(display_df, hide_index=True)
+
 
 def render_css():
     st.markdown(
