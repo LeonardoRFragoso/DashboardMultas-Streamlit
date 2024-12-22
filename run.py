@@ -262,7 +262,7 @@ for _, row in filtered_data.iterrows():
         ).add_to(m)
 
 # Detalhes das multas para localização selecionada
-map_click_data = st_folium(m, width="100%", height=600)  # Captura os cliques no mapa
+map_click_data = st_folium(m, width="100%", height=800)  # Captura os cliques no mapa
 
 if map_click_data and map_click_data.get("last_object_clicked"):
     lat = map_click_data["last_object_clicked"].get("lat")
