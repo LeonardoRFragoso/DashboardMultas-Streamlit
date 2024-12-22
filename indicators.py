@@ -2,6 +2,13 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+def handle_table_display(df, columns_to_display, rename_map=None):
+    """Função auxiliar para formatar e exibir dataframes"""
+    display_df = df[columns_to_display].copy()
+    if rename_map:
+        display_df = display_df.rename(columns=rename_map)
+    return st.dataframe(display_df, hide_index=True)
+
 def render_css():
     st.markdown(
         """
@@ -80,9 +87,17 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.error("A coluna com índice 5 não foi encontrada nos dados.")
         return
 
-    unique_fines = data.drop_duplicates(subset=[5])
-    
+    # Definição de colunas para exibição
+    column_map = {
+        0: "Data",
+        1: "Placa do Veículo",
+        5: "Auto de Infração",
+        14: "Valor R$"
+    }
+
     try:
+        unique_fines = data.drop_duplicates(subset=[5])
+        
         total_multas = unique_fines[5].nunique()
         valor_total_multas = unique_fines[14].sum()
         ano_atual = datetime.now().year
@@ -121,7 +136,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="total_multas"):
-                st.dataframe(unique_fines)
+                handle_table_display(unique_fines, [0, 1, 5], column_map)
 
         with cols[1]:
             st.markdown(
@@ -134,7 +149,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_total"):
-                st.dataframe(unique_fines[[5, 14]])
+                handle_table_display(unique_fines, [0, 1, 5, 14], column_map)
 
         with cols[2]:
             st.markdown(
@@ -147,7 +162,8 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="multas_ano"):
-                st.dataframe(unique_fines[unique_fines[9].dt.year == ano_atual])
+                ano_data = unique_fines[unique_fines[9].dt.year == ano_atual]
+                handle_table_display(ano_data, [0, 1, 5], column_map)
 
         with cols[3]:
             st.markdown(
@@ -160,7 +176,8 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_ano"):
-                st.dataframe(unique_fines[unique_fines[9].dt.year == ano_atual][[5, 14]])
+                ano_data = unique_fines[unique_fines[9].dt.year == ano_atual]
+                handle_table_display(ano_data, [0, 1, 5, 14], column_map)
 
         with cols[4]:
             st.markdown(
@@ -173,10 +190,11 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="multas_mes"):
-                st.dataframe(filtered_data[
+                mes_data = filtered_data[
                     (filtered_data[9].dt.year == ano_atual) & 
                     (filtered_data[9].dt.month == mes_atual)
-                ])
+                ]
+                handle_table_display(mes_data, [0, 1, 5], column_map)
 
         with cols[5]:
             st.markdown(
@@ -189,10 +207,11 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_mes"):
-                st.dataframe(filtered_data[
+                mes_data = filtered_data[
                     (filtered_data[9].dt.year == ano_atual) & 
                     (filtered_data[9].dt.month == mes_atual)
-                ][[5, 14]])
+                ]
+                handle_table_display(mes_data, [0, 1, 5, 14], column_map)
 
         with cols[6]:
             st.markdown(
@@ -205,7 +224,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="data_consulta"):
-                st.write(f"Período: {data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}")
+                st.write(f"Período analisado: {data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}")
 
     except Exception as e:
         st.error(f"Erro ao processar os dados: {str(e)}")
