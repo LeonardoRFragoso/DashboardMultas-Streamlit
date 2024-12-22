@@ -14,7 +14,7 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     # Resetando o índice e exibindo a tabela
     display_df = display_df.reset_index(drop=True)
 
-    # Adicionando estilo CSS para garantir que a tabela ocupe 100% da largura disponível
+    # Exibindo a tabela com a largura ajustada
     st.markdown(
         """
         <style>
