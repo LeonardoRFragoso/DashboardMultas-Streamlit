@@ -1,8 +1,3 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-
-# Função para aplicar o CSS
 def render_css():
     st.markdown(
         """
@@ -43,12 +38,30 @@ def render_css():
                 margin: 0;
                 font-weight: bold;
             }
+
+            /* Estilo para o botão de detalhes */
+            .detail-button {
+                width: 100%;
+                background-color: #F37529;
+                color: white;
+                border: none;
+                padding: 8px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 10px;
+            }
+
+            /* Container do botão */
+            .button-container {
+                display: flex;
+                justify-content: center;
+                padding-top: 10px;
+            }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-# Função para renderizar indicadores
 def render_indicators(data, filtered_data, data_inicio, data_fim):
     render_css()
 
@@ -75,9 +88,8 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         (filtered_data[9].dt.year == ano_atual) & (filtered_data[9].dt.month == mes_atual)
     ][14].sum() if 14 in filtered_data.columns else 0
 
-    # Ajuste da Data da Consulta (linha 2, índice 0)
     try:
-        data_consulta = data.iloc[1, 0]  # Linha 2, Coluna 0
+        data_consulta = data.iloc[1, 0]
         data_formatada = (
             data_consulta.strftime('%d/%m/%Y')
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
@@ -85,48 +97,46 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
     except (IndexError, KeyError):
         data_formatada = "N/A"
 
-    # Renderizar todos os indicadores com HTML interativo
-    indicadores_html = f"""
-    <div class="indicadores-container">
-        <div class="indicador" data-id="total_multas">
-            <span>Total de Multas</span>
-            <p>{total_multas}</p>
-        </div>
-        <div class="indicador" data-id="valor_total">
-            <span>Valor Total das Multas</span>
-            <p>R$ {valor_total_multas:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="multas_ano">
-            <span>Multas no Ano Atual</span>
-            <p>{multas_ano_atual}</p>
-        </div>
-        <div class="indicador" data-id="valor_ano">
-            <span>Valor Total Multas no Ano Atual</span>
-            <p>R$ {valor_multas_ano_atual:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="multas_mes">
-            <span>Multas no Mês Atual</span>
-            <p>{multas_mes_atual}</p>
-        </div>
-        <div class="indicador" data-id="valor_mes">
-            <span>Valor das Multas no Mês Atual</span>
-            <p>R$ {valor_multas_mes_atual:,.2f}</p>
-        </div>
-        <div class="indicador" data-id="data_consulta">
-            <span>Data da Consulta</span>
-            <p>{data_formatada}</p>
-        </div>
-    </div>
-    
-    <script>
-        const indicadores = document.querySelectorAll('.indicador');
-        indicadores.forEach(indicador => {{
-            indicador.addEventListener('dblclick', function() {{
-                const indicatorId = this.getAttribute('data-id');
-                fetch(`/abrir_planilha?id=${{indicatorId}}`);
-            }});
-        }});
-    </script>
-    """
+    # Renderizar indicadores sem os botões
+    indicators_data = [
+        ("Total de Multas", total_multas),
+        ("Valor Total das Multas", f"R$ {valor_total_multas:,.2f}"),
+        ("Multas no Ano Atual", multas_ano_atual),
+        ("Valor Total Multas no Ano Atual", f"R$ {valor_multas_ano_atual:,.2f}"),
+        ("Multas no Mês Atual", multas_mes_atual),
+        ("Valor das Multas no Mês Atual", f"R$ {valor_multas_mes_atual:,.2f}"),
+        ("Data da Consulta", data_formatada)
+    ]
 
-    st.markdown(indicadores_html, unsafe_allow_html=True)
+    # Renderizar os indicadores
+    for i, (title, value) in enumerate(indicators_data):
+        st.markdown(f"""
+            <div class="indicador">
+                <span>{title}</span>
+                <p>{value}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Adicionar botão abaixo do indicador
+        if st.button("🔍 Detalhes", key=f"detail_btn_{i}"):
+            # Adicionar lógica específica para cada indicador
+            if i == 0:  # Total de Multas
+                st.dataframe(unique_fines)
+            elif i == 1:  # Valor Total
+                st.dataframe(unique_fines[[5, 14]])
+            elif i == 2:  # Multas Ano Atual
+                st.dataframe(unique_fines[unique_fines[9].dt.year == ano_atual])
+            elif i == 3:  # Valor Ano Atual
+                st.dataframe(unique_fines[unique_fines[9].dt.year == ano_atual][[5, 14]])
+            elif i == 4:  # Multas Mês Atual
+                st.dataframe(filtered_data[
+                    (filtered_data[9].dt.year == ano_atual) & 
+                    (filtered_data[9].dt.month == mes_atual)
+                ])
+            elif i == 5:  # Valor Mês Atual
+                st.dataframe(filtered_data[
+                    (filtered_data[9].dt.year == ano_atual) & 
+                    (filtered_data[9].dt.month == mes_atual)
+                ][[5, 14]])
+            elif i == 6:  # Data Consulta
+                st.write(f"Período: {data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}")
