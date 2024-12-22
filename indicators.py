@@ -8,12 +8,11 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
     
-    # Resetando o índice e exibindo a tabela
+    # Resetando o índice e exibindo a tabela com uso total da largura
     display_df = display_df.reset_index(drop=True)
 
     # Exibindo a tabela com a largura ajustada
     st.dataframe(display_df, hide_index=True, use_container_width=True)
-
 
 def render_css():
     st.markdown(
