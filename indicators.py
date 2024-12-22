@@ -11,43 +11,45 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
 
-    # Formatando valores monetários
+    # Formatando valores monetários e datas
     if 14 in columns_to_display:
         display_df[rename_map[14]] = display_df[rename_map[14]].apply(lambda x: f'R$ {x:,.2f}')
-
-    # Formatando datas
     if 0 in columns_to_display:
         display_df[rename_map[0]] = pd.to_datetime(display_df[rename_map[0]]).dt.strftime('%d/%m/%Y')
 
+    # CSS para ajustar a largura da tabela
     st.markdown(
         """
         <style>
-            section[data-testid="stDataFrame"] {
+            .element-container {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            [data-testid="column"] > div:has(div.stDataFrame) {
                 width: 100% !important;
                 max-width: 100% !important;
             }
-            
-            section[data-testid="stDataFrame"] > div {
+
+            [data-testid="column"] > div > div.stDataFrame {
                 width: 100% !important;
                 max-width: 100% !important;
             }
-            
-            section[data-testid="stDataFrame"] div[data-testid="stDataFrameContainer"] {
+
+            [data-testid="column"] > div > div.stDataFrame > div {
                 width: 100% !important;
                 max-width: 100% !important;
             }
-            
-            .stDataFrame {
-                width: 100% !important;
-            }
-            
-            iframe[title="data frame preview"] {
+
+            [data-testid="column"] > div > div.stDataFrame > div > iframe {
                 width: 100% !important;
                 min-width: 100% !important;
             }
-            
-            div[data-testid="StyledFullScreenButton"] {
-                display: none;
+
+            div[data-testid="stHorizontalBlock"] {
+                gap: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
         </style>
         """,
@@ -58,7 +60,7 @@ def handle_table_display(df, columns_to_display, rename_map=None):
         display_df,
         hide_index=True,
         use_container_width=True,
-        width=None  # Remove limitação de largura
+        height=400
     )
 
 def render_css():
@@ -121,13 +123,29 @@ def render_css():
                 align-items: center !important;
             }
             
-            div[data-testid="stDataFrame"] > div {
+            div.stDataFrame {
                 width: 100% !important;
             }
 
-            div[data-testid="stDataFrame"] > div > iframe {
+            div.stDataFrame > div {
+                width: 100% !important;
+            }
+
+            div.stDataFrame > div > iframe {
                 width: 100% !important;
                 min-width: 100% !important;
+            }
+
+            # Ajuste para as tabelas
+            [data-testid="column"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 1rem !important;
+            }
+
+            [data-testid="column"]:has(div.stDataFrame) {
+                width: 100% !important;
+                max-width: 100% !important;
             }
         </style>
         """,
