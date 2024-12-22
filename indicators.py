@@ -28,21 +28,13 @@ def handle_table_display(df, columns_to_display, rename_map=None):
         unsafe_allow_html=True
     )
     
-    # Exibir a tabela com a largura ajustada
     st.dataframe(display_df, hide_index=True, use_container_width=True)
 
 # Exemplo de como exibir a tabela com as multas
 # Supondo que 'data' seja o seu DataFrame
 # Renomeando as colunas conforme necessário
-column_map = {
-    0: 'Dia da Consulta', 
-    1: 'Placa Relacionada', 
-    2: 'RENAVAM', 
-    5: 'Auto de Infração', 
-    14: 'Valor a ser pago R$'
-}
-handle_table_display(data, [0, 1, 2, 5, 14], column_map)
-
+column_map = {0: 'Data', 1: 'Placa do Veículo', 5: 'Auto de Infração', 14: 'Valor a ser pago R$'}
+handle_table_display(data, [0, 1, 5, 14], column_map)
 
 def render_css():
     st.markdown(
