@@ -2,17 +2,39 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+# Configurar a página para usar o layout 'wide'
+st.set_page_config(layout="wide")
+
 def handle_table_display(df, columns_to_display, rename_map=None):
     """Função auxiliar para formatar e exibir dataframes"""
     display_df = df[columns_to_display].copy()
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
-    return st.dataframe(
-        display_df,
-        hide_index=True,
-        use_container_width=True,
-        height=400
+
+    # Resetando o índice e exibindo a tabela
+    display_df = display_df.reset_index(drop=True)
+
+    # Exibindo a tabela com a largura ajustada
+    st.markdown(
+        """
+        <style>
+            .stDataFrame {
+                width: 100% !important;
+                overflow-x: auto !important;
+                display: block;
+            }
+            .stDataFrame .dataframe {
+                width: 100% !important;
+                display: block;
+                overflow-x: auto !important;
+            }
+        </style>
+        """, 
+        unsafe_allow_html=True
     )
+
+    # Exibindo a tabela com a largura ajustada
+    st.dataframe(display_df, hide_index=True, use_container_width=True)
 
 def render_css():
     st.markdown(
@@ -80,18 +102,6 @@ def render_css():
                 flex-direction: column !important;
                 align-items: center !important;
             }
-
-            .dataframe {
-                font-size: 14px !important;
-            }
-
-            .stDataFrame {
-                width: 100% !important;
-            }
-
-            [data-testid="stDataFrameResizer"] {
-                min-width: 100% !important;
-            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -104,6 +114,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         st.error("A coluna com índice 5 não foi encontrada nos dados.")
         return
 
+    # Definição de colunas para exibição
     column_map = {
         0: "Data",
         1: "Placa do Veículo",
@@ -138,14 +149,17 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
             if isinstance(data_consulta, pd.Timestamp) else str(data_consulta)
         )
 
+        # Layout dos indicadores
         cols = st.columns(7)
         
         with cols[0]:
             st.markdown(
-                f"""<div class="indicador">
+                f"""
+                <div class="indicador">
                     <span>Total de Multas</span>
                     <p>{total_multas}</p>
-                </div>""", 
+                </div>
+                """, 
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="total_multas"):
@@ -153,10 +167,12 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[1]:
             st.markdown(
-                f"""<div class="indicador">
+                f"""
+                <div class="indicador">
                     <span>Valor Total das Multas</span>
                     <p>R$ {valor_total_multas:,.2f}</p>
-                </div>""",
+                </div>
+                """,
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_total"):
@@ -164,10 +180,12 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[2]:
             st.markdown(
-                f"""<div class="indicador">
+                f"""
+                <div class="indicador">
                     <span>Multas no Ano Atual</span>
                     <p>{multas_ano_atual}</p>
-                </div>""",
+                </div>
+                """,
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="multas_ano"):
@@ -176,10 +194,12 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[3]:
             st.markdown(
-                f"""<div class="indicador">
+                f"""
+                <div class="indicador">
                     <span>Valor Total Multas no Ano Atual</span>
                     <p>R$ {valor_multas_ano_atual:,.2f}</p>
-                </div>""",
+                </div>
+                """,
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_ano"):
@@ -188,10 +208,12 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[4]:
             st.markdown(
-                f"""<div class="indicador">
+                f"""
+                <div class="indicador">
                     <span>Multas no Mês Atual</span>
                     <p>{multas_mes_atual}</p>
-                </div>""",
+                </div>
+                """,
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="multas_mes"):
@@ -203,10 +225,12 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[5]:
             st.markdown(
-                f"""<div class="indicador">
+                f"""
+                <div class="indicador">
                     <span>Valor das Multas no Mês Atual</span>
                     <p>R$ {valor_multas_mes_atual:,.2f}</p>
-                </div>""",
+                </div>
+                """,
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_mes"):
@@ -218,14 +242,16 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[6]:
             st.markdown(
-                f"""<div class="indicador">
+                f"""
+                <div class="indicador">
                     <span>Data da Consulta</span>
                     <p>{data_formatada}</p>
-                </div>""",
+                </div>
+                """,
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="data_consulta"):
-                st.write(f"Período: {data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}")
+                st.write(f"Período analisado: {data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}")
 
     except Exception as e:
         st.error(f"Erro ao processar os dados: {str(e)}")
