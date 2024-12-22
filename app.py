@@ -1,0 +1,1 @@
+Ficou otimo, obrigado, agora analise o arquivo modular real do projeto, preciso que seus indicadores atuais  ( os 7 ) mantenham a estilização original, porém, que os card existente agora tenham o mesmo botão de detalhes que criamos no nosso arquivo devidamente aplicados e funcionais, consegue me ajudar com isso?
