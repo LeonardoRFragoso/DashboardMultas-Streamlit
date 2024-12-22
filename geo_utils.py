@@ -4,7 +4,6 @@ import requests
 import streamlit as st
 import time
 import unicodedata
-from geo_utils import load_cache
 
 CACHE_FILE = "coordinates_cache.json"
 LAST_SAVE_TIME = time.time()
