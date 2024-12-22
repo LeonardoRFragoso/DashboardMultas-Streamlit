@@ -11,30 +11,36 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
 
-    # Resetando o índice e exibindo a tabela
-    display_df = display_df.reset_index(drop=True)
+    # Formatando valores monetários
+    if 14 in columns_to_display:
+        display_df[rename_map[14]] = display_df[rename_map[14]].apply(lambda x: f'R$ {x:,.2f}')
 
-    # Exibindo a tabela com a largura ajustada
+    # Formatando datas
+    if 0 in columns_to_display:
+        display_df[rename_map[0]] = pd.to_datetime(display_df[rename_map[0]]).dt.strftime('%d/%m/%Y')
+
     st.markdown(
         """
         <style>
-            .stDataFrame {
-                width: 100% !important;
-                overflow-x: auto !important;
-                display: block;
+            [data-testid="stTable"] table {
+                width: 100%;
+                min-width: 400px;
             }
-            .stDataFrame .dataframe {
-                width: 100% !important;
-                display: block;
-                overflow-x: auto !important;
+            [data-testid="stTable"] td {
+                white-space: nowrap;
+                min-width: 100px;
             }
         </style>
-        """, 
+        """,
         unsafe_allow_html=True
     )
 
-    # Exibindo a tabela com a largura ajustada
-    st.dataframe(display_df, hide_index=True, use_container_width=True)
+    return st.dataframe(
+        display_df,
+        hide_index=True,
+        use_container_width=True,
+        height=300
+    )
 
 def render_css():
     st.markdown(
@@ -58,27 +64,18 @@ def render_css():
                 box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
                 text-align: center;
                 padding: 20px;
-                width: 210px;
+                width: 100%;
+                max-width: 210px;
                 height: 140px;
                 cursor: pointer;
                 transition: transform 0.2s ease-in-out;
-                margin-bottom: 5px;
+                margin: 0 auto 5px auto;
             }
 
-            .indicador:hover {
-                transform: scale(1.05);
-            }
-
-            .indicador span {
-                font-size: 18px;
-                color: #0066B4;
-            }
-
-            .indicador p {
-                font-size: 24px;
-                color: #0066B4;
-                margin: 0;
-                font-weight: bold;
+            .button-container {
+                width: 100%;
+                max-width: 210px;
+                margin: 0 auto;
             }
 
             .stButton > button {
@@ -86,7 +83,9 @@ def render_css():
                 color: white !important;
                 font-weight: 600 !important;
                 width: 100% !important;
-                margin-top: 5px !important;
+                max-width: 210px !important;
+                margin: 5px auto !important;
+                display: block !important;
             }
 
             .stButton > button:hover {
@@ -101,6 +100,15 @@ def render_css():
                 display: flex !important;
                 flex-direction: column !important;
                 align-items: center !important;
+            }
+            
+            div[data-testid="stDataFrame"] > div {
+                width: 100% !important;
+            }
+
+            div[data-testid="stDataFrame"] > div > iframe {
+                width: 100% !important;
+                min-width: 100% !important;
             }
         </style>
         """,
@@ -119,7 +127,7 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         0: "Data",
         1: "Placa do Veículo",
         5: "Auto de Infração",
-        14: "Valor R$"
+        14: "Valor"
     }
 
     try:
@@ -154,12 +162,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
         
         with cols[0]:
             st.markdown(
-                f"""
-                <div class="indicador">
+                f"""<div class="indicador">
                     <span>Total de Multas</span>
                     <p>{total_multas}</p>
-                </div>
-                """, 
+                </div>""", 
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="total_multas"):
@@ -167,12 +173,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[1]:
             st.markdown(
-                f"""
-                <div class="indicador">
+                f"""<div class="indicador">
                     <span>Valor Total das Multas</span>
                     <p>R$ {valor_total_multas:,.2f}</p>
-                </div>
-                """,
+                </div>""",
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_total"):
@@ -180,12 +184,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[2]:
             st.markdown(
-                f"""
-                <div class="indicador">
+                f"""<div class="indicador">
                     <span>Multas no Ano Atual</span>
                     <p>{multas_ano_atual}</p>
-                </div>
-                """,
+                </div>""",
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="multas_ano"):
@@ -194,12 +196,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[3]:
             st.markdown(
-                f"""
-                <div class="indicador">
+                f"""<div class="indicador">
                     <span>Valor Total Multas no Ano Atual</span>
                     <p>R$ {valor_multas_ano_atual:,.2f}</p>
-                </div>
-                """,
+                </div>""",
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_ano"):
@@ -208,12 +208,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[4]:
             st.markdown(
-                f"""
-                <div class="indicador">
+                f"""<div class="indicador">
                     <span>Multas no Mês Atual</span>
                     <p>{multas_mes_atual}</p>
-                </div>
-                """,
+                </div>""",
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="multas_mes"):
@@ -225,12 +223,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[5]:
             st.markdown(
-                f"""
-                <div class="indicador">
+                f"""<div class="indicador">
                     <span>Valor das Multas no Mês Atual</span>
                     <p>R$ {valor_multas_mes_atual:,.2f}</p>
-                </div>
-                """,
+                </div>""",
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="valor_mes"):
@@ -242,12 +238,10 @@ def render_indicators(data, filtered_data, data_inicio, data_fim):
 
         with cols[6]:
             st.markdown(
-                f"""
-                <div class="indicador">
+                f"""<div class="indicador">
                     <span>Data da Consulta</span>
                     <p>{data_formatada}</p>
-                </div>
-                """,
+                </div>""",
                 unsafe_allow_html=True
             )
             if st.button("🔍 Detalhes", key="data_consulta"):

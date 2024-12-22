@@ -22,13 +22,32 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     st.markdown(
         """
         <style>
-            [data-testid="stTable"] table {
-                width: 100%;
-                min-width: 400px;
+            section[data-testid="stDataFrame"] {
+                width: 100% !important;
+                max-width: 100% !important;
             }
-            [data-testid="stTable"] td {
-                white-space: nowrap;
-                min-width: 100px;
+            
+            section[data-testid="stDataFrame"] > div {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
+            section[data-testid="stDataFrame"] div[data-testid="stDataFrameContainer"] {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
+            .stDataFrame {
+                width: 100% !important;
+            }
+            
+            iframe[title="data frame preview"] {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+            
+            div[data-testid="StyledFullScreenButton"] {
+                display: none;
             }
         </style>
         """,
@@ -39,7 +58,7 @@ def handle_table_display(df, columns_to_display, rename_map=None):
         display_df,
         hide_index=True,
         use_container_width=True,
-        height=300
+        width=None  # Remove limitação de largura
     )
 
 def render_css():
