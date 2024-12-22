@@ -7,8 +7,21 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     display_df = df[columns_to_display].copy()
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
-    st.dataframe(display_df, hide_index=True, width=1500, height=600)  # Tamanho ajustado
-
+    
+    # Adicionando estilo CSS diretamente
+    st.markdown(
+        """
+        <style>
+            .stDataFrame {
+                width: 100% !important;
+                overflow-x: auto !important;
+            }
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
+    
+    st.dataframe(display_df, hide_index=True)
 
 def render_css():
     st.markdown(
