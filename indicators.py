@@ -7,7 +7,10 @@ def handle_table_display(df, columns_to_display, rename_map=None):
     display_df = df[columns_to_display].copy()
     if rename_map:
         display_df = display_df.rename(columns=rename_map)
-    return st.dataframe(display_df, hide_index=True)
+    
+    # Exibir a tabela com a largura ajustada
+    st.dataframe(display_df, hide_index=True, use_container_width=True)
+
 
 def render_css():
     st.markdown(
