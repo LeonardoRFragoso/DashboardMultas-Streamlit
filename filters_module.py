@@ -77,6 +77,11 @@ def apply_filters(data):
             default=placa_opcoes.tolist()
         )
 
+        # Verificação para evitar dataframe vazio
+        if not placa_selecionada:
+            st.warning("Nenhuma placa selecionada. Exibindo todos os dados.")
+            placa_selecionada = placa_opcoes
+
     filtered_data = data[
         (data[9] >= pd.Timestamp(data_inicio)) &
         (data[9] <= pd.Timestamp(data_fim)) &

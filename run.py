@@ -63,12 +63,24 @@ def ensure_coordinates(data, api_key):
         data[['Latitude', 'Longitude']] = float('nan')
         return data
 
-    coordinates = data[12].apply(lambda loc: pd.Series(get_coordinates_with_cache(loc)))
+    # Verificação de dataframe vazio
+    if data.empty:
+        st.warning("Nenhum dado disponível para processar coordenadas.")
+        data[['Latitude', 'Longitude']] = float('nan')
+        return data
 
-    if coordinates.shape[1] == 2:
-        data[['Latitude', 'Longitude']] = coordinates
-    else:
-        st.error("Erro ao carregar coordenadas. Colunas 'Latitude' e 'Longitude' estão com tamanho inconsistente.")
+    coordinates = data[12].apply(
+        lambda loc: pd.Series(
+            get_coordinates_with_cache(loc) if pd.notnull(loc) else [float('nan'), float('nan')]
+        )
+    )
+
+    # Garantir que sempre haja duas colunas, mesmo que vazias
+    if coordinates.shape[1] != 2:
+        coordinates = pd.DataFrame([[float('nan'), float('nan')]] * len(data), columns=[0, 1])
+
+    # Atribuir as coordenadas corretamente
+    data[['Latitude', 'Longitude']] = coordinates
 
     return data
 
@@ -208,6 +220,11 @@ if data.empty:
 
 # Aplicar filtros
 filtered_data, data_inicio, data_fim = apply_filters(data)
+
+# Verificar se há dados após filtragem
+if filtered_data.empty:
+    st.warning("Nenhuma multa encontrada com os filtros selecionados. Tente ajustar os filtros.")
+    st.stop()
 
 # Garantir coordenadas com cache
 filtered_data = ensure_coordinates(filtered_data, api_key)
