@@ -58,14 +58,12 @@ def ensure_coordinates(data, api_key):
             return [float('nan'), float('nan')]
         return [lat, lng]
 
-    if 12 not in data.columns:
-        st.error("A coluna de Local da Infração (índice 12) não foi encontrada.")
-        data[['Latitude', 'Longitude']] = float('nan')
-        return data
-
-    # Verificação de dataframe vazio
     if data.empty:
         st.warning("Nenhum dado disponível para processar coordenadas.")
+        return data  # Retorna o DataFrame vazio sem erro
+
+    if 12 not in data.columns:
+        st.error("A coluna de Local da Infração (índice 12) não foi encontrada.")
         data[['Latitude', 'Longitude']] = float('nan')
         return data
 
