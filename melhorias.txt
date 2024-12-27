@@ -1,0 +1,7 @@
+Melhorias para dashboard.
+
+1 - Mudar nome indicador para data da ultima consulta.
+2 - Separar gráfico de multas acumuluadas para mostrar multas acumuladas por ano e por mes. ( verificar se iremos utilizar gráfico em linha)
+3 - Alterar a escala utilizada no gráfico de multas acumuladas. (se for utilizado gráfico em linha para multas acumuladas mensal e anual)
+4 - Gráfico Infrações Mais Comuns está mostrando campo dividido para a mesma infração 218 INC | 9 ocorrências...
+5 - 
