@@ -289,6 +289,9 @@ if map_click_data and map_click_data.get("last_object_clicked"):
         (filtered_data['Longitude'] == lng)
     ]
 
+    # Remover duplicatas baseado no Auto de Infração (índice 5)
+    selected_fines = selected_fines.drop_duplicates(subset=[5])
+
     if not selected_fines.empty:
         st.markdown(
             """
@@ -323,7 +326,7 @@ if map_click_data and map_click_data.get("last_object_clicked"):
         )
     else:
         st.info("Nenhuma multa encontrada para a localização selecionada.")
-
+        
 # Graphs Section
 # Gráfico de Veículos com Mais Multas - Ajustado para Multas Únicas
 st.markdown(
