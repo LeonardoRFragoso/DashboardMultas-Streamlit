@@ -38,6 +38,19 @@ def create_monthly_fines_chart(data):
         yaxis=dict(range=[0, monthly_data['Valor_Total'].max() * 1.1])
     )
 
+    fig.update_layout(
+        yaxis=dict(
+            range=[0, monthly_data['Valor_Total'].max() * 1.2],
+            title="Valores"
+        ),
+        yaxis2=dict(
+            range=[0, monthly_data['Quantidade_de_Multas'].max() * 1.2],
+            title="Quantidade",
+            overlaying='y',
+            side='right'
+        )
+    )
+
     return fig
 
 def create_yearly_fines_chart(data):

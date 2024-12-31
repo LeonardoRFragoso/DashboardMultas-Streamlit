@@ -568,8 +568,13 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
             legend_title="Métricas"
         )
 
-        # Mostrar o gráfico no Streamlit
-        st.plotly_chart(accumulated_chart, use_container_width=True)
+        # Gráfico Mensal
+        monthly_chart = create_monthly_fines_chart(filtered_data)
+        st.plotly_chart(monthly_chart, use_container_width=True)
+
+        # Gráfico Anual 
+        yearly_chart = create_yearly_fines_chart(filtered_data)
+        st.plotly_chart(yearly_chart, use_container_width=True)
 
     except KeyError as e:
         st.error(f"Erro ao processar os dados para o gráfico de Multas Acumuladas: {e}")
