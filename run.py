@@ -2,22 +2,24 @@ import streamlit as st
 import pandas as pd
 import json
 from datetime import datetime
-from graph_geo_distribution import create_geo_distribution_map
-from geo_utils import get_cached_coordinates, initialize_cache
-from graph_vehicles_fines import create_vehicle_fines_chart
-from graph_common_infractions import create_common_infractions_chart
-from graph_weekday_infractions import create_weekday_infractions_chart
-from graph_fines_accumulated import create_fines_accumulated_chart
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
-from indicators import render_indicators
-from google.oauth2.service_account import Credentials
 import io
 import plotly.express as px
 from folium import Map, Marker, Popup
 from folium.features import CustomIcon
 from streamlit_folium import st_folium
-from filters_module import apply_filters  # Importar o módulo de filtros
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
+
+# Import custom modules
+from graph_geo_distribution import create_geo_distribution_map
+from geo_utils import get_cached_coordinates, initialize_cache
+from graph_vehicles_fines import create_vehicle_fines_chart 
+from graph_common_infractions import create_common_infractions_chart
+from graph_weekday_infractions import create_weekday_infractions_chart
+from graph_fines_accumulated import create_monthly_fines_chart, create_yearly_fines_chart
+from indicators import render_indicators
+from filters_module import apply_filters
 
 # Inicializar cache
 initialize_cache()
@@ -39,8 +41,9 @@ def download_file_from_drive(file_id, credentials_info):
 def preprocess_data(file_buffer):
     data = pd.read_excel(file_buffer)
     data.columns = range(len(data.columns))
-
-    for col_index in [13, 14]:
+    
+    # Valores monetários (valor_original e valor_pagar)
+    for col_index in [13, 14]:  # Correto, mantém
         data[col_index] = (
             data[col_index]
             .astype(str)
@@ -48,7 +51,8 @@ def preprocess_data(file_buffer):
             .str.replace(',', '.', regex=False)
             .astype(float)
         )
-    data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
+    # Data da infração
+    data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)  # Correto, mantém
     return data
 
 def ensure_coordinates(data, api_key):

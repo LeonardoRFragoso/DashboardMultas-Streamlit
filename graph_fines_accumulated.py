@@ -2,64 +2,75 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
-def create_fines_accumulated_chart(data, period='M'):
+def create_monthly_fines_chart(data):
     """
-    Cria um gráfico de linhas para exibir a quantidade e o valor acumulado de multas por período (2024).
-
-    Parâmetros:
-        data (DataFrame): Os dados filtrados contendo informações sobre as multas.
-        period (str): O período para agrupamento ('M' para mensal, 'W' para semanal).
-
-    Retorna:
-        fig (plotly.graph_objects.Figure): Um gráfico de linhas mostrando quantidade e valor acumulado de multas.
+    Cria gráfico de linhas para multas mensais do ano atual.
     """
-    # Garantir que a coluna com índice 9 (Data da Infração) seja datetime
     data[9] = pd.to_datetime(data[9], errors='coerce')
-
-    # Remover linhas com datas inválidas
     data = data.dropna(subset=[9])
     
-    # Filtrar apenas o ano atual (de janeiro a dezembro)
     current_year = datetime.now().year
-    data = data[(data[9] >= pd.Timestamp(f"{current_year}-01-01")) & (data[9] <= pd.Timestamp(f"{current_year}-12-31"))]
+    data = data[(data[9].dt.year == current_year)]
 
-    # Garantir que a coluna com índice 14 (Valor a ser pago R$) esteja em formato numérico
-    data[14] = (
-        data[14]
-        .astype(str)
-        .str.replace(r'[^\d,.-]', '', regex=True)
-        .str.replace(',', '.')
-        .astype(float)
-    )
+    data[14] = (data[14].astype(str)
+                .str.replace(r'[^\d,.-]', '', regex=True)
+                .str.replace(',', '.')
+                .astype(float))
 
-    # Criar um campo de período com base nos meses do ano
-    data['Período'] = data[9].dt.to_period('M').dt.to_timestamp()
-
-    # Agregar dados: contar multas e somar valores por período
-    fines_by_period = data.groupby('Período').agg(
-        Quantidade_de_Multas=(5, 'nunique'),  # Índice 5 representa 'Auto de Infração'
-        Valor_Total=(14, 'sum')               # Índice 14 representa 'Valor a ser pago R$'
+    monthly_data = data.groupby(data[9].dt.strftime('%Y-%m')).agg(
+        Quantidade_de_Multas=(5, 'nunique'),
+        Valor_Total=(14, 'sum')
     ).reset_index()
+    monthly_data.rename(columns={9: 'Mês'}, inplace=True)
 
-    # Criar o gráfico com duas linhas: Quantidade de Multas e Valor Total
-    fig = px.line(
-        fines_by_period,
-        x='Período',
-        y=['Quantidade_de_Multas', 'Valor_Total'],
-        labels={
-            'value': 'Total de Multas',
-            'Período': 'Período'
-        },
-        title=''
-    )
+    fig = px.line(monthly_data,
+                 x='Mês',
+                 y=['Quantidade_de_Multas', 'Valor_Total'],
+                 labels={'value': 'Total', 'Mês': ''},
+                 title='Multas Mensais - ' + str(current_year))
 
-    # Personalizar o layout
     fig.update_traces(mode='lines+markers', marker=dict(size=8))
     fig.update_layout(
         xaxis_title="",
         yaxis_title="Valores",
         template="plotly_white",
-        legend=dict(title="Métricas")
+        legend=dict(title="Métricas"),
+        yaxis=dict(range=[0, monthly_data['Valor_Total'].max() * 1.1])
+    )
+
+    return fig
+
+def create_yearly_fines_chart(data):
+    """
+    Cria gráfico de linhas para multas anuais.
+    """
+    data[9] = pd.to_datetime(data[9], errors='coerce')
+    data = data.dropna(subset=[9])
+
+    data[14] = (data[14].astype(str)
+                .str.replace(r'[^\d,.-]', '', regex=True)
+                .str.replace(',', '.')
+                .astype(float))
+
+    yearly_data = data.groupby(data[9].dt.year).agg(
+        Quantidade_de_Multas=(5, 'nunique'),
+        Valor_Total=(14, 'sum')
+    ).reset_index()
+    yearly_data.rename(columns={9: 'Ano'}, inplace=True)
+
+    fig = px.line(yearly_data,
+                 x='Ano',
+                 y=['Quantidade_de_Multas', 'Valor_Total'],
+                 labels={'value': 'Total', 'Ano': ''},
+                 title='Multas Acumuladas por Ano')
+
+    fig.update_traces(mode='lines+markers', marker=dict(size=8))
+    fig.update_layout(
+        xaxis_title="",
+        yaxis_title="Valores",
+        template="plotly_white",
+        legend=dict(title="Métricas"),
+        yaxis=dict(range=[0, yearly_data['Valor_Total'].max() * 1.1])
     )
 
     return fig
