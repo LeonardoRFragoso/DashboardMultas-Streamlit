@@ -51,8 +51,10 @@ def preprocess_data(file_buffer):
             .str.replace(',', '.', regex=False)
             .astype(float)
         )
+    
     # Data da infração
-    data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)  # Correto, mantém
+    data[9] = pd.to_datetime(data[9], errors='coerce', dayfirst=True)
+    
     return data
 
 def ensure_coordinates(data, api_key):
@@ -221,7 +223,7 @@ if data.empty:
     st.stop()
 
 # Aplicar filtros
-filtered_data, data_inicio, data_fim = apply_filters(data)
+filtered_data = apply_filters(data)
 
 # Verificar se há dados após filtragem
 if filtered_data.empty:
@@ -232,7 +234,7 @@ if filtered_data.empty:
 filtered_data = ensure_coordinates(filtered_data, api_key)
 
 # Renderizar Indicadores
-render_indicators(data, filtered_data, data_inicio, data_fim)
+render_indicators(data, filtered_data, None, None)
 
 st.markdown(
     """
@@ -517,13 +519,23 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
     )
 
     try:
+              
         # Remover duplicados com base no Auto de Infração (índice 5)
         unique_fines_accumulated = filtered_data.drop_duplicates(subset=[5])
 
-        # Criar uma lista de todos os meses de janeiro a dezembro do ano atual
+        # Encontrar o ano mais antigo e mais recente nos dados
+        min_year = unique_fines_accumulated[9].dt.year.min()
+        max_year = unique_fines_accumulated[9].dt.year.max()
+        
+        if pd.isna(min_year):
+            min_year = datetime.now().year
+        if pd.isna(max_year):
+            max_year = datetime.now().year
+
+        # Criar uma lista de todos os meses do período
         all_months = pd.period_range(
-            start=f"{datetime.now().year}-01", 
-            end=f"{datetime.now().year}-12", 
+            start=f"{min_year}-01", 
+            end=f"{max_year}-12", 
             freq="M"
         )
 
@@ -537,7 +549,7 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
             .reset_index()
         )
 
-        # Ajustar o índice para incluir todos os meses de janeiro a dezembro
+        # Ajustar o índice para incluir todos os meses do período
         accumulated_summary.set_index(9, inplace=True)
         accumulated_summary = accumulated_summary.reindex(all_months, fill_value=0).reset_index()
         accumulated_summary.rename(columns={"index": "Período"}, inplace=True)
@@ -550,7 +562,7 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
             accumulated_summary,
             x="Período",
             y=['Quantidade_de_Multas', 'Valor_Total'],
-            title="",
+            title="Evolução Mensal de Multas",
             labels={
                 "value": "Valores",
                 "variable": "Métricas",
@@ -560,23 +572,27 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
         )
 
         # Ajustar layout do gráfico
-        accumulated_chart.update_traces(marker=dict(size=16))
+        accumulated_chart.update_traces(marker=dict(size=8))
         accumulated_chart.update_layout(
             xaxis_title="",
             yaxis_title="Valores",
             template="plotly_white",
-            legend_title="Métricas"
+            legend_title="Métricas",
+            height=400
         )
+        
+        st.plotly_chart(accumulated_chart, use_container_width=True)
 
         # Gráfico Mensal com Seletor de Ano
         st.markdown("#### Análise Mensal de Multas")
-        create_monthly_fines_chart(filtered_data)
+        create_monthly_fines_chart(unique_fines_accumulated)
 
         # Gráfico Anual com Seletor de Período
         st.markdown("#### Análise Anual de Multas")
-        create_yearly_fines_chart(filtered_data)
+        create_yearly_fines_chart(unique_fines_accumulated)
 
-    except KeyError as e:
-        st.error(f"Erro ao processar os dados para o gráfico de Multas Acumuladas: {e}")
+    except Exception as e:
+        st.error(f"Erro ao processar dados de multas acumuladas: {str(e)}")
+        st.write("Detalhes do erro:", e)
 else:
     st.error("As colunas necessárias para o gráfico de multas acumuladas não foram encontradas.")

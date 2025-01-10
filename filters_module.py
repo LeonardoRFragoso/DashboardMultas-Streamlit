@@ -45,52 +45,52 @@ def apply_filters(data):
     with st.expander("🔧 Filtros para Refinamento de Dados", expanded=False):
         st.markdown('<p class="filtro-alerta">Ajuste os filtros para uma análise detalhada das multas.</p>', unsafe_allow_html=True)
         
-        data_inicio = st.date_input("Data de Início", value=datetime(2024, 1, 1))
-        data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
+        # Encontrar a data mais antiga e mais recente nos dados
+        min_date = pd.to_datetime(data[9]).min()
+        max_date = pd.to_datetime(data[9]).max()
+        
+        if pd.isna(min_date):
+            min_date = datetime(2017, 1, 1)
+        if pd.isna(max_date):
+            max_date = datetime.now()
+            
+        # Debug - mostrar datas encontradas
+        st.write("Data mais antiga:", min_date)
+        st.write("Data mais recente:", max_date)
+        
+        data_inicio = st.date_input("Data de Início", value=min_date)
+        data_fim = st.date_input("Data Final", value=max_date)
         
         codigo_infracao_opcoes = data[8].dropna().unique()
-        codigo_infracao_selecionado = st.multiselect(
-            "Selecione o Código da Infração",
-            options=codigo_infracao_opcoes,
-            default=codigo_infracao_opcoes.tolist()
-        )
-
-        descricao_infracao_opcoes = data[11].dropna().unique()
-        descricao_infracao_selecionada = st.multiselect(
-            "Selecione a Descrição da Infração",
-            options=descricao_infracao_opcoes,
-            default=descricao_infracao_opcoes.tolist()
-        )
-
-        valor_min, valor_max = st.slider(
-            "Selecione o intervalo de valores das multas",
-            min_value=float(data[14].min()),
-            max_value=float(data[14].max()),
-            value=(float(data[14].min()), float(data[14].max())),
-            step=0.01
-        )
-
-        placa_opcoes = data[1].dropna().unique()
-        placa_selecionada = st.multiselect(
-            "Selecione a Placa do Veículo",
-            options=placa_opcoes,
-            default=placa_opcoes.tolist()
-        )
-
-        # Verificação para evitar dataframe vazio
-        if not placa_selecionada:
-            st.warning("Nenhuma placa selecionada. Exibindo todos os dados.")
-            placa_selecionada = placa_opcoes
-
-    filtered_data = data[
-        (data[9] >= pd.Timestamp(data_inicio)) &
-        (data[9] <= pd.Timestamp(data_fim)) &
-        (data[8].isin(codigo_infracao_selecionado)) &
-        (data[11].isin(descricao_infracao_selecionada)) &
-        (data[14] >= valor_min) &
-        (data[14] <= valor_max) &
-        (data[1].isin(placa_selecionada))
-    ]
-
-    # Retornar os dados filtrados + as datas selecionadas
-    return filtered_data, data_inicio, data_fim
+        if len(codigo_infracao_opcoes) > 0:
+            codigo_infracao = st.multiselect("Código da Infração", options=sorted(codigo_infracao_opcoes))
+        
+        placa_opcoes = data[2].dropna().unique()
+        if len(placa_opcoes) > 0:
+            placa = st.multiselect("Placa do Veículo", options=sorted(placa_opcoes))
+        
+        # Aplicar filtros
+        filtered_data = data.copy()
+        
+        # Filtro de data
+        filtered_data[9] = pd.to_datetime(filtered_data[9])
+        filtered_data = filtered_data[
+            (filtered_data[9].dt.date >= data_inicio) & 
+            (filtered_data[9].dt.date <= data_fim)
+        ]
+        
+        # Filtro de código de infração
+        if codigo_infracao:
+            filtered_data = filtered_data[filtered_data[8].isin(codigo_infracao)]
+            
+        # Filtro de placa
+        if placa:
+            filtered_data = filtered_data[filtered_data[2].isin(placa)]
+            
+        # Debug - mostrar contagem após filtros
+        st.write("Total de registros após filtros:", len(filtered_data))
+        st.write("Anos únicos após filtros:", sorted(filtered_data[9].dt.year.unique()))
+        
+        return filtered_data
+        
+    return data
