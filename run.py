@@ -568,13 +568,13 @@ if 9 in filtered_data.columns and 14 in filtered_data.columns and 5 in filtered_
             legend_title="Métricas"
         )
 
-        # Gráfico Mensal
-        monthly_chart = create_monthly_fines_chart(filtered_data)
-        st.plotly_chart(monthly_chart, use_container_width=True)
+        # Gráfico Mensal com Seletor de Ano
+        st.markdown("#### Análise Mensal de Multas")
+        create_monthly_fines_chart(filtered_data)
 
-        # Gráfico Anual 
-        yearly_chart = create_yearly_fines_chart(filtered_data)
-        st.plotly_chart(yearly_chart, use_container_width=True)
+        # Gráfico Anual com Seletor de Período
+        st.markdown("#### Análise Anual de Multas")
+        create_yearly_fines_chart(filtered_data)
 
     except KeyError as e:
         st.error(f"Erro ao processar os dados para o gráfico de Multas Acumuladas: {e}")

@@ -45,7 +45,7 @@ def apply_filters(data):
     with st.expander("🔧 Filtros para Refinamento de Dados", expanded=False):
         st.markdown('<p class="filtro-alerta">Ajuste os filtros para uma análise detalhada das multas.</p>', unsafe_allow_html=True)
         
-        data_inicio = st.date_input("Data de Início", value=datetime(datetime.now().year, 1, 1))
+        data_inicio = st.date_input("Data de Início", value=datetime(2024, 1, 1))
         data_fim = st.date_input("Data Final", value=datetime(datetime.now().year, 12, 31))
         
         codigo_infracao_opcoes = data[8].dropna().unique()
